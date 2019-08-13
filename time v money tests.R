@@ -14,11 +14,47 @@ NB<-read.csv("NB_Codes.csv")%>%
 lawn<-read.csv("Lawn Quadrats_Balt18.csv")
 trees<-read.csv("Trees_Balt18_FB_clean.csv")
 floral<-read.csv("Floral_Data_Balt18_clean.csv")
-survey<-read.csv("Survey_prelim2.csv")%>%
+survey<-read.csv("2018 Homeowner_Survey Data_081219.csv")%>%
   filter(House_ID!="")
 yardarea<-read.csv("YardArea.csv")%>%
   rename(homeid=House_ID)%>%
   mutate(homeid=as.character(homeid))
+
+#testing life stage categories
+ls<-yardarea%>%
+  left_join(NB)
+
+summary(aov(pct_65_older~Style*money, data=ls))
+summary(aov(MEDHINC_CY~Style*money, data=ls))
+
+
+ls_toplot<-ls%>%
+  group_by(money, Style)%>%
+  summarise(retired=mean(pct_65_older),
+            sdr=sd(pct_65_older),
+            inc=mean(MEDHINC_CY),
+            sdm=sd(MEDHINC_CY),
+            n=length(pct_65_older))%>%
+  mutate(ser=sdr/sqrt(n), 
+         sem=sdm/sqrt(n))
+
+ggplot(data=ls_toplot, aes(x = Style, y = retired, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=retired-ser, ymax=retired+ser),
+                width=.2,  position=position_dodge(.9))+
+  ylab("% 65 or older")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
+
+ggplot(data=ls_toplot, aes(x = Style, y = inc, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=inc-sem, ymax=inc+sem),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Median Income")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
 
 ##lawns
 lawn2<-lawn%>%
@@ -34,31 +70,56 @@ lawn2<-lawn%>%
 lawn_rich<-community_structure(lawn2, abundance.var="Cover", replicate.var = "homeid_loc")%>%
   separate(homeid_loc, into=c("NB", "House", "Location"))%>%
   mutate(Nb=as.integer(NB),
-         House=as.integer(House))
+         House=as.integer(House),
+         leven=log(Evar))
 
 lawn_analysis<-lawn_rich%>%
-  left_join(yardarea)
+  left_join(yardarea)%>%
+  left_join(NB)
 
-write.csv(lawn_analysis, "lawn_analysis.csv")
+hist(lawn_rich$richness)
+hist(log(lawn_rich$Evar))
 
 #ANCOVA
-summary(aov(richness~Style*money+Location+yard_area, data=lawn_analysis))
+summary(aov(richness~Style*money*Location+yard_area, data=lawn_analysis))
+#nothing with richness
+
+summary(aov(leven~Style*money*Location+yard_area, data=lawn_analysis))
+
+#interaction with money and location for evenness
 
 lawn_toplot<-lawn_analysis%>%
-  group_by(Style, money, Location)%>%
-  summarise(rich=mean(richness),
-            sd=sd(richness),
+  group_by(money, Location)%>%
+  summarise(even=mean(leven,na.rm = T),
+            sd=sd(leven, na.rm = T),
+            n=length(leven))%>%
+  mutate(se=sd/sqrt(n))
+
+ggplot(data=lawn_toplot, aes(x = money, y = even, fill=Location))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=even-se, ymax=even+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Log(Lawn Evenness)")+
+  xlab("Income")+
+  scale_x_discrete(labels=c("High", "Middle"))+
+  scale_fill_brewer("Location", palette="Dark2")
+
+lawn_toplotrich<-lawn_analysis%>%
+  group_by(money, Style)%>%
+  summarise(rich=mean(richness,na.rm = T),
+            sd=sd(richness, na.rm = T),
             n=length(richness))%>%
   mutate(se=sd/sqrt(n))
 
-ggplot(data=lawn_toplot, aes(x = Style, y = rich, fill=money))+
+ggplot(data=lawn_toplotrich, aes(x = Style, y = rich, fill=money))+
   geom_bar(stat = "identity", position = position_dodge(0.9))+
   geom_errorbar(aes(ymin=rich-se, ymax=rich+se),
                 width=.2,  position=position_dodge(.9))+
-  ylab("Lawn Richness")+
-  xlab("Lifestage")+
-  scale_fill_brewer("Income", palette="Set2")+
-  facet_wrap(~Location, ncol=1)
+  ylab("Lawn Richness)")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", palette="Dark2", labels="High","Middle")
+
 
 #trees
 #this is not working with FB data in there
@@ -166,11 +227,80 @@ mostcommon<-trees2%>%
   summarize(num=length(species))
 
 
-##floral
-test<-floral%>%
-  select(House_ID, Front.Back)%>%
-  unique()
+###tree DBH
+notrees_dhb<-trees%>%
+  filter(Tree.species=="no trees")%>%
+  mutate(DBH=0)%>%
+  select(NB, House, DBH, Tree.species, Front.Back)
 
+dbh_onetrunk<-trees%>%
+  filter(is.na(DBH2), !is.na(DBH1))%>%
+  rename(DBH=DBH1)%>%
+  select(NB, House, Front.Back, Tree.species, DBH)
+
+dbh_multiple<-trees%>%
+  filter(!is.na(DBH2))%>%
+  group_by(NB, House, Front.Back, Tree.species)%>%
+  select(-notes, -dbh.unit)%>%
+  mutate(rep=rank(DBH1, ties.method = "random"))%>%
+  group_by(NB, House, Front.Back, Tree.species, rep)%>%
+  gather(trunk, measure, DBH1:DBH6)%>%
+  na.omit()%>%
+  mutate(square=measure*measure)%>%
+  ungroup()%>%
+  group_by(NB, House, Front.Back, Tree.species, rep)%>%
+  summarize(DBHsum=sum(square))%>%
+  mutate(DBH=sqrt(DBHsum))%>%
+  select(-DBHsum, -rep)
+
+DBHdata<-dbh_multiple%>%
+  bind_rows(dbh_onetrunk)%>%
+  bind_rows(notrees_dhb)%>%
+  group_by(NB, House, Front.Back)%>%
+  summarise(DBH=sum(DBH))%>%
+  rename(Nb=NB)%>%
+  left_join(yardarea)%>%
+  left_join(NB)%>%
+  mutate(ldbh=log(DBH+1))
+
+hist(DBHdata$ldbh)
+
+#ANCOVA
+summary(aov(ldbh~Style*money*Front.Back+yard_area, data=DBHdata))
+
+ggplot(data=DBHdata, aes(x=yard_area, y = ldbh, color=money))+
+  geom_point(size=5)+
+  geom_smooth(method = "lm", se=F, size = 2)+
+  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
+  ylab("Log(Tree DBH)")+
+  xlab("Yard Area")
+
+ggplot(data=DBHdata, aes(x=yard_area, y = ldbh, color=Front.Back))+
+  geom_point(size=5)+
+  geom_smooth(method = "lm", se=F, size = 2)+
+  scale_color_manual(name="Location", values=c("firebrick", "goldenrod"), labels=c("Back", "Front"))+
+  ylab("Log(Tree DBH)")+
+  xlab("Yard Area")
+
+dbh_toplot<-DBHdata%>%
+  group_by(Style, Front.Back)%>%
+  summarise(mean=mean(ldbh,na.rm = T),
+            sd=sd(ldbh, na.rm = T),
+            n=length(ldbh))%>%
+  mutate(se=sd/sqrt(n))
+
+ggplot(data=dbh_toplot, aes(x = Style, y = mean, fill=Front.Back))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Log(Tree DBH)")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Location", palette="Dark2", labels=c("Back", "Front"))
+
+
+
+##floral
 floral2<-floral%>% 
   filter(Flower.Width..cm.!="", Genus!="NoFlowers")%>%
   mutate(numflowers=X.F.stems*ave_flower_perstem,
@@ -210,7 +340,7 @@ summary(aov(lnumplants~Style*money*Front.Back+yard_area, data=flowernum))
 ggplot(data=flowernum, aes(x=yard_area, y = lnumplants, color=money))+
   geom_point(size=5)+
   geom_smooth(method = "lm", se=F, size = 2)+
-  scale_color_manual(name="Location", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
+  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
   ylab("Log(Num. Flowering Plants)")+
   xlab("Yard Area")
 
@@ -219,7 +349,7 @@ summary(aov(lnumflowers~Style*money*Front.Back+yard_area, data=flowernum))
 ggplot(data=flowernum, aes(x=yard_area, y = lnumflowers, color=money))+
   geom_point(size=5)+
   geom_smooth(method = "lm", se=F, size = 2)+
-  scale_color_manual(name="Location", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
+  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
   ylab("Log(Num. Flowers)")+
   xlab("Yard Area")
 
@@ -228,7 +358,7 @@ summary(aov(larea~Style*money*Front.Back+yard_area, data=flowernum))
 ggplot(data=flowernum, aes(x=yard_area, y = larea, color=money))+
   geom_point(size=5)+
   geom_smooth(method = "lm", se=F, size = 2)+
-  scale_color_manual(name="Location", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
+  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
   ylab("Log(Floral Area)")+
   xlab("Yard Area")
 
@@ -267,7 +397,7 @@ summary(aov(lrich~Style*money*Front.Back+yard_area, data=flower_rich))
 ggplot(data=flower_rich, aes(x=yard_area, y = lrich, color=money))+
   geom_point(size=5)+
   geom_smooth(method = "lm", se=F, size = 2)+
-  scale_color_manual(name="Location", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
+  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
   ylab("Log(Floral Richness)")+
   xlab("Yard Area")
 
@@ -310,13 +440,14 @@ ggplot(data=color_rich, aes(x=yard_area, y = lrich, color=money))+
 
 #survey
 survey1<-survey%>%
-  separate(House_ID, into=c("NB","Home"), sep="_")%>%
-  mutate(NB=as.integer(NB))%>%
+  separate(House_ID, into=c("Nb","House"), sep="_")%>%
+  mutate(Nb=as.integer(Nb))%>%
   left_join(NB)
 
 satisfied<-survey1%>%
-  filter(A1!="no answer"&A1!="No answer")%>%
+  filter(A1!="No answer")%>%
   mutate(A1=as.numeric(as.character((A1))))
+
 summary(aov(A1~Style*money, data=satisfied))
 
 sat_toplot<-satisfied%>%
@@ -326,16 +457,17 @@ sat_toplot<-satisfied%>%
             n=length(A1))%>%
   mutate(se=sd/sqrt(n))
 
-ggplot(data=sat_toplot, aes(x=Style, y = mean, fill=money))+
-  geom_bar(stat="identity", position=position_dodge(0.9))+
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position = position_dodge(0.9))+
-  xlab("Lifestage")+
-  ylab("Yard Satifaction")+
-  scale_fill_brewer("Income", palette="Set2")+
-  scale_y_continuous(limits=c(-2,2))
+ggplot(data=sat_toplot, aes(x = Style, y = mean, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Satisfied with Yard")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
 
 sat_time<-survey1%>%
-  filter(A204!="no answer"&A204!="No answer")%>%
+  filter(A204!="No answer")%>%
   mutate(A204=as.numeric(as.character((A204))))
 summary(aov(A204~Style*money, data=sat_time))
 
@@ -346,18 +478,20 @@ sat_time_toplot<-sat_time%>%
             n=length(A204))%>%
   mutate(se=sd/sqrt(n))
 
-ggplot(data=sat_time_toplot, aes(x=Style, y = mean, fill=money))+
-  geom_bar(stat="identity", position=position_dodge(0.9))+
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position = position_dodge(0.9))+
-  xlab("Lifestage")+
-  ylab("Too much Time")+
-  scale_fill_brewer("Income", palette="Set2")+
-  scale_y_continuous(limits=c(0,1))
+ggplot(data=sat_time_toplot, aes(x = Style, y = mean, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Too Much Time")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
 
 sat_money<-survey1%>%
-  select(A205, Style, money, NB)%>%
-  filter(A205!="no answer"&A205!="No answer"&A205!="?")%>%
+  select(A205, Style, money)%>%
+  filter(A205!="No answer")%>%
   mutate(A205=as.numeric(as.character((A205))))
+
 summary(aov(A205~Style*money, data=sat_money))
 
 sat_money_toplot<-sat_money%>%
@@ -367,72 +501,56 @@ sat_money_toplot<-sat_money%>%
             n=length(A205))%>%
   mutate(se=sd/sqrt(n))
 
-ggplot(data=sat_money_toplot, aes(x=Style, y = mean, fill=money))+
-  geom_bar(stat="identity", position=position_dodge(0.9))+
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.2, position = position_dodge(0.9))+
-  xlab("Lifestage")+
-  ylab("Too much Money")+
-  scale_fill_brewer("Income", palette="Set2")+
-  scale_y_continuous(limits=c(-0.05,1))
+ggplot(data=sat_money_toplot, aes(x = Style, y = mean, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Too Much Money")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
 
+####what are people actually doing in their yards?
 timespent<-survey1%>%
-  select(Style, money, C101)%>%
-  group_by(Style, money)%>%
-  filter(C101!="no answer")%>%
-  mutate(C101=as.numeric(C101))%>%
-  summarise(mean=mean(C101))
-summary(aov(C101~Style*money, data=timespent))
-plot(C101~Style, data=timespent)
+  select(Style, money, C101.1)%>%
+  filter(C101.1!="No answer")%>%
+  mutate(C101.1=as.numeric(as.character(C101.1)))
 
+summary(aov(C101.1~Style*money, data=timespent))
 
+ts_toplot<-timespent%>%
+  group_by(money, Style)%>%
+  summarize(mean=mean(C101.1, na.rm=T),
+            sd=sd(C101.1),
+            n=length(C101.1))%>%
+  mutate(se=sd/sqrt(n))
+
+ggplot(data=ts_toplot, aes(x = Style, y = mean, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Time Spent (hours/week)")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
 
 paywork<-survey1%>%
   mutate(pay=ifelse(C104==1|C203==1|C5==1, 1, 0))%>%
-  group_by(Style, money)%>%
-  summarise(sum=sum(pay),
-            n=length(pay),
-            prop=sum/n)
 
-favtree<-survey1%>%
-  group_by(B401)%>%
-  summarize(num=length(B401))
+summary(aov(pay~Style*money, data=paywork))
 
-lawncare<-survey1%>%
-  group_by(Style, money)%>%
-  filter(C5!="no answer"&C5!="No answer")%>%
-  mutate(C5=as.numeric(as.character(C5)))%>%
-  summarise(sum=sum(C5))
+pay_toplot<-paywork%>%
+  group_by(money, Style)%>%
+  summarize(mean=mean(pay, na.rm=T),
+            sd=sd(pay),
+            n=length(pay))%>%
+  mutate(se=sd/sqrt(n))
 
-buyannuals<-survey1%>%
-  filter(C401=="P")
-summary(aov(as.numeric(as.character((C402)))~Style*money, data=buyannuals))
-
-buyperren<-survey1%>%
-  filter(C403=="P")
-summary(aov(as.numeric(as.character(C404))~Style*money, data=buyperren))
-buysperren_toplot<-buyperren%>%
-  group_by(Style, money)%>%
-  summarize(buy=mean(as.numeric(as.character(C404))),
-            n=length(C404))
-
-buytrees<-survey1%>%
-  filter(C405=="P")
-summary(aov(as.numeric(C406)~Style*money, data=buytrees))
-buytree_toplot<-buytrees%>%
-  group_by(Style, money)%>%
-  summarize(buy=mean(as.numeric(as.character(C406))),
-            n=length(C406))
-
-buyshrubs<-survey1%>%
-  filter(C407=="P")
-summary(aov(as.numeric(C408)~Style*money, data=buyshrubs))
-buyshurbs_toplot<-buyshrubs%>%
-  group_by(Style, money)%>%
-  summarize(buy=mean(as.numeric(as.character(C408))),
-            n=length(C408))
-
-#Lawn Nitrogen fixers merge -AB 8/12/2019
-N.Fixers<-read.csv("N.Fixers.csv")
-
-lawn_nfix<-lawn %>%
-  left_join(N.Fixers)
+ggplot(data=pay_toplot, aes(x = Style, y = mean, fill=money))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Pay for Yard Work")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
