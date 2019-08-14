@@ -108,7 +108,7 @@ DBHdata<-dbh_multiple%>%
 floral2<-floral%>% 
   filter(Flower.Width..cm.!="", Genus!="NoFlowers")%>%
   mutate(numflowers=X.F.stems*ave_flower_perstem,
-         area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.)))%>%
+         area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.))*numflowers)%>%
   group_by(House_ID, Genus)%>%
   summarize(nplants=sum(X..F.plants),
             nflowers=sum(numflowers),
@@ -311,7 +311,6 @@ ggplot(data=tograph_cor, aes(x = C101.1, y = value))+
   geom_point(size=1, position="jitter")+
   #scale_color_manual(name="", values=c("darkgray", 'blue'))+
   geom_smooth(data=subset(tograph_cor, div_group=="lnumplants"), method="lm", se=F, color = "red")+
-  geom_smooth(data=subset(tograph_cor, div_group=="larea"), method="lm", se=F, color = "red")+
   geom_smooth(data=subset(tograph_cor, div_group=="lrich"), method="lm", se=F, color = "red")+
   geom_smooth(data=subset(tograph_cor, div_group=="lcrich"), method="lm", se=F, color = "red")+
   facet_wrap(~div_group, scales="free", labeller=labeller(div_group = div), ncol=3)+
