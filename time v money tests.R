@@ -308,7 +308,7 @@ ggplot(data=dbh_toplot, aes(x = Style, y = mean, fill=Front.Back))+
 floral2<-floral%>% 
   filter(Flower.Width..cm.!="", Genus!="NoFlowers")%>%
   mutate(numflowers=X.F.stems*ave_flower_perstem,
-         area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.)))%>%
+         area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.))*numflowers)%>%
   group_by(House_ID, Genus, Front.Back)%>%
   summarize(nplants=sum(X..F.plants),
             nflowers=sum(numflowers),
@@ -348,12 +348,20 @@ ggplot(data=flowernum, aes(x=yard_area, y = lnumplants, color=money))+
   ylab("Log(Num. Flowering Plants)")+
   xlab("Yard Area")
 
+
 summary(aov(lnumflowers~Style*money*Front.Back+yard_area, data=flowernum))
 
 ggplot(data=flowernum, aes(x=yard_area, y = lnumflowers, color=money))+
   geom_point(size=5)+
   geom_smooth(method = "lm", se=F, size = 2)+
   scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("High", "Middle"))+
+  ylab("Log(Num. Flowers)")+
+  xlab("Yard Area")
+
+ggplot(data=flowernum, aes(x=yard_area, y = lnumflowers, color=Style))+
+  geom_point(size=5)+
+  geom_smooth(method = "lm", se=F, size = 2)+
+  scale_color_manual(name="Life Stage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
   ylab("Log(Num. Flowers)")+
   xlab("Yard Area")
 
@@ -373,6 +381,13 @@ ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Front.Back))+
   ylab("Log(Floral Area)")+
   xlab("Yard Area")
 
+
+ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Style))+
+  geom_point(size=5)+
+  geom_smooth(method = "lm", se=F, size = 2)+
+  scale_color_manual(name="Life Stage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  ylab("Log(Floral Area)")+
+  xlab("Yard Area")
 
 ###floral richness
 noflowers_rich<-floral%>%
@@ -569,7 +584,7 @@ library(reshape2)
 pie.test.1<-floral%>% 
   filter(Flower.Width..cm.!="", Genus!="NoFlowers")%>%
   mutate(numflowers=X.F.stems*ave_flower_perstem,
-         area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.)))%>%
+         area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.))*numflowers)%>%
   group_by(House_ID, Genus, color1, color2)%>%
   summarize(nplants=sum(X..F.plants),
             nflowers=sum(numflowers),
@@ -591,7 +606,7 @@ pie.across<-melt(pie.test.1, id=c("Nb","House","Color_area","money"))%>%
 pie.across$value2<-factor(pie.across$value, levels = c("blue","purple-blue", "purple","red-purple", "red", "red-orange","orange","yellow-orange","yellow", "green-yellow","green","white"))
 
 #graph!
-ggplot(pie.across, aes(x = money, y=Sum_colarea, fill=value2))+
+ggplot(pie.across, aes(x = money, y=Sum_colarea/10000, fill=value2))+
   geom_bar(color="black", width = 0.75,stat="identity")+
   scale_x_discrete(limits=c("mid","high"), labels=c("Middle","High"))+
   scale_fill_manual(values=c("blue", "darkviolet", "purple","violetred3", "red","orangered1","orange","goldenrod1","yellow","yellowgreen","green4", "white"))+
