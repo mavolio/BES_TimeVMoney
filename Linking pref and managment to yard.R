@@ -231,8 +231,8 @@ lmanage<-herbpest%>%
   bind_rows(rake)
 
 ggplot(data=lmanage, aes(x=Q, y = rich))+
-  geom_bar(stat="identity", position=position_dodge(0.9))+
-  geom_errorbar(aes(ymin=rich-se, ymax=rich+se), position = position_dodge(0.9), size=1)+
+  geom_bar(stat="identity", position=position_dodge(0.9), fill="darkslateblue")+
+  geom_errorbar(aes(ymin=rich-se, ymax=rich+se), position = position_dodge(0.9), size=1, width = 0.5)+
   ylab("Lawn Richness")+
   xlab ("Do you?")+
   facet_wrap(~manage)
@@ -266,10 +266,19 @@ fertilize_nfixs<-lawncover%>%
 t.test(cover~C601, data=fertilize_nfixs)
 
 ggplot(data=fertilize_nfix, aes(x=C601, y = mcov))+
-  geom_bar(stat="identity", position=position_dodge(0.9))+
-  geom_errorbar(aes(ymin=mcov-se, ymax=mcov+se), position = position_dodge(0.9), size=1)+
+  geom_bar(stat="identity", position=position_dodge(0.9), fill="darkslate gray")+
+  geom_errorbar(aes(ymin=mcov-se, ymax=mcov+se), position = position_dodge(0.9), size=1, width=0.5)+
   ylab("Cover N-Fixers")+
   xlab ("Do you Fertilize?")
+
+fertilize_nfix<-lawncover%>%
+  filter(C602!="No answer")%>%
+  group_by(C601)%>%
+  summarise(mcov=mean(cover), 
+            sd=sd(cover),
+            n=length(cover))%>%
+  mutate(se=sd/sqrt(n))
+
 
 ###linking time spent to floral diversity
 floraldata<-color_rich%>%
@@ -299,12 +308,12 @@ div<-c(
 
 
 ggplot(data=tograph_cor, aes(x = C101.1, y = value))+
-  geom_point()+
+  geom_point(size=1, position="jitter")+
   #scale_color_manual(name="", values=c("darkgray", 'blue'))+
-  geom_smooth(data=subset(tograph_cor, div_group=="lnumplants"), method="lm", se=F, color = "black")+
-  geom_smooth(data=subset(tograph_cor, div_group=="larea"), method="lm", se=F, color = "black")+
-  geom_smooth(data=subset(tograph_cor, div_group=="lrich"), method="lm", se=F, color = "black")+
-  geom_smooth(data=subset(tograph_cor, div_group=="lcrich"), method="lm", se=F, color = "black")+
+  geom_smooth(data=subset(tograph_cor, div_group=="lnumplants"), method="lm", se=F, color = "red")+
+  geom_smooth(data=subset(tograph_cor, div_group=="larea"), method="lm", se=F, color = "red")+
+  geom_smooth(data=subset(tograph_cor, div_group=="lrich"), method="lm", se=F, color = "red")+
+  geom_smooth(data=subset(tograph_cor, div_group=="lcrich"), method="lm", se=F, color = "red")+
   facet_wrap(~div_group, scales="free", labeller=labeller(div_group = div), ncol=3)+
   xlab("Time Spent (hours/week)")+
   ylab("Value")
@@ -331,8 +340,8 @@ with(floraldata2, cor.test(lrich, A710))
 
 p1<-
 ggplot(data=floraldata2, aes(x = A6, y = lrich))+
-  geom_point()+
-  geom_smooth(method="lm", color="black", se=F)+
+  geom_point(position = position_jitter(0.1))+
+  geom_smooth(method="lm", color="red", se=F)+
   ylab("Log(Floral Richness)")+
   xlab("Importance of Biodiversity")
 
@@ -340,13 +349,10 @@ ggplot(data=floraldata2, aes(x = A6, y = lrich))+
 with(floraldata2, cor.test(lcrich, A702))
 p2<-
 ggplot(data=floraldata2, aes(x = A702, y = lcrich))+
-  geom_point()+
-  geom_smooth(method="lm", color="black", se=F)+
+  geom_point(position=position_jitter(0.1))+
+  geom_smooth(method="lm", color="red", se=F)+
   ylab("Log(Num. Colors)")+
   xlab("Importance of Color Variety")
-
-grid.arrange(p1, p2, ncol=2)
-
 
 treerich2<-tree_rich%>%
   left_join(survey1)%>%
@@ -361,18 +367,12 @@ with(treerich2, cor.test(lrich, A6))
 with(treerich2, cor.test(lrich, A709))
 
 p3<-
-  ggplot(data=treerich2, aes(x = A6, y = lrich))+
-  geom_point()+
-  ylab("Log(Tree Species Richness)")+
-  xlab("Importance of Biodiversity")
-
-p4<-
   ggplot(data=treerich2, aes(x = A709, y = lrich))+
-  geom_point()+
-  geom_smooth(method="lm", color="black", se=F)+
-  ylab("Log(Tree Species Richness)")+
-  xlab("Importance of Tree Species Variety")
-grid.arrange(p3, p4, ncol=2)
+    geom_point(position=position_jitter(0.1))+
+    geom_smooth(method="lm", color="red", se=F)+
+    ylab("Log(Tree Sp. Richness)")+
+    xlab("Importance of Tree Sp. Variety")
+grid.arrange(p1, p2, p3, ncol=2)
 
 
 ###preference for tree attributes
@@ -399,3 +399,5 @@ p6<-
   ylab("Log(Tree DBH)")+
   xlab("Importance Planting Shade Trees")
 grid.arrange(p5, p6, ncol=2)
+
+
