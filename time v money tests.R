@@ -1,5 +1,5 @@
 setwd('C:\\Users\\megha\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
-setwd('~/Dropbox/BES Research/Time V Money/Data/Cleaned Data')
+setwd('C:\\Users\\mavolio2\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
 
 #WD for Allie
 setwd("C:\\Users\\ablanch4\\Dropbox\\Time V Money\\Data\\Cleaned Data\\")# put path here
