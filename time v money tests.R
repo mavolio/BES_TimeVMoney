@@ -6,6 +6,7 @@ setwd("C:\\Users\\ablanch4\\Dropbox\\Time V Money\\Data\\Cleaned Data\\")# put p
 
 library(tidyverse)
 library(codyn)
+library(gridExtra)
 theme_set(theme_bw(20))
 
 NB<-read.csv("NB_Codes.csv")%>%
@@ -173,13 +174,27 @@ ggplot(data=stems2, aes(x=yard_area, y = lstems, color=money))+
   ylab("Log(Num. Trees)")+
   xlab("Yard Area")
 
-ggplot(data=stems2, aes(x=yard_area, y = lstems, color=Front.Back))+
+p1<-ggplot(data=stems2, aes(x=yard_area, y = number, color=Front.Back))+
+  geom_point(size=5, alpha=0.5)+
+  geom_smooth(method = "lm", se=T, size = 2, aes(color=Front.Back))+
+  scale_color_manual(name="Location", values=c("firebrick", "goldenrod"), labels=c("Back", "Front"))+
+  ylab("Num. Trees")+
+  xlab("Yard Area")
+p2<-ggplot(data=stems2, aes(x=yard_area, y = lstems, color=Front.Back))+
   geom_point(size=5)+
   geom_smooth(method = "lm", se=F, size = 2)+
   scale_color_manual(name="Location", values=c("firebrick", "goldenrod"), labels=c("Back", "Front"))+
   ylab("Log(Num. Trees)")+
   xlab("Yard Area")
+p3<-ggplot(data=stems2, aes(x=yard_area, y = number, color=Front.Back))+
+  geom_point(size=5)+
+  geom_smooth(method = "lm", se=F, size = 2)+
+  scale_color_manual(name="Location", values=c("firebrick", "goldenrod"), labels=c("Back", "Front"))+
+  ylab("Log(Num. Trees)")+
+  xlab("Yard Area")+
+  scale_y_continuous(trans="log10")
 
+grid.arrange(p1,p2,p3)
 
 ##tree richness
 notrees_rich<-trees%>%
