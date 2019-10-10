@@ -23,6 +23,7 @@ survey<-read.csv("2018 Homeowner_Survey Data_081219.csv")%>%
 yardarea<-read.csv("YardArea.csv")%>%
   rename(homeid=House_ID)%>%
   mutate(homeid=as.character(homeid))
+invasive<-read.csv("Invasives_Balt18_cleaned.csv")
 
 yardstats<-yardarea%>%
   group_by(Nb)%>%
@@ -376,6 +377,46 @@ hist(color_rich$lrich)
 
 #ancova
 summary(aov(lrich~Style*money*Front.Back+yard_area, data=color_rich))
+
+
+##invasives
+##tree richness
+noinv<-invasive%>%
+  filter(Species.Latin=="none")%>%
+  mutate(richness=0)%>%
+  select(NB, House, richness)%>%
+  rename(Nb=NB)
+
+invasive2<-invasive%>%
+  filter(Species.Latin!="none")%>%
+  mutate(homeid=paste(NB, House, sep="::"),
+         present=1)
+
+commoninv<-invasive2%>%
+  group_by(Species.Latin)%>%
+  summarize(n=sum(present))
+
+inv_rich<-community_structure(invasive2, abundance.var="present", replicate.var="homeid")%>%
+  separate(homeid, into=c("NB", "House"))%>%
+  select(-Evar)%>%
+  mutate(Nb=as.integer(NB), House=as.integer(House))%>%
+  bind_rows(noinv)%>%
+  left_join(yardarea)%>%
+  left_join(NB)%>%
+  mutate(lrich=log(richness+1))
+
+hist(inv_rich$richness)
+
+summary(aov(richness~Style*money*yard_area, data=inv_rich))
+
+ggplot(data=inv_rich, aes(x=yard_area, y = richness, color=sy))+
+  geom_point(size=3, alpha= 0.5)+
+  geom_smooth(method = "lm", se=T, size = 2)+
+  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("Middle", "High"), limits=c("mid","high"))+
+  ylab("Num. Invasive Sp.")+
+  xlab("Yard Area")+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
 
 
 ###figures
