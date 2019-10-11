@@ -388,7 +388,7 @@ noinv<-invasive%>%
   rename(Nb=NB)
 
 invasive2<-invasive%>%
-  filter(Species.Latin!="none")%>%
+  filter(Species.Latin!="none"&Notes!="not on our list")%>%
   mutate(homeid=paste(NB, House, sep="::"),
          present=1)
 
@@ -409,13 +409,7 @@ hist(inv_rich$richness)
 
 summary(aov(richness~Style*money*yard_area, data=inv_rich))
 
-ggplot(data=inv_rich, aes(x=yard_area, y = richness, color=sy))+
-  geom_point(size=3, alpha= 0.5)+
-  geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("Middle", "High"), limits=c("mid","high"))+
-  ylab("Num. Invasive Sp.")+
-  xlab("Yard Area")+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
 
 
 
@@ -451,6 +445,15 @@ treerich<-ggplot(data=tree_rich, aes(x=yard_area, y = richness, color=money))+
   ylab("Tree Richness")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+inv<-ggplot(data=inv_rich, aes(x=yard_area, y = richness, color=Style))+
+  geom_point(size=3, alpha= 0.5)+
+  geom_smooth(method = "lm", se=T, size = 2)+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  ylab("Num. Invasive Sp.")+
+  xlab("Yard Area")+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
 # dbh_toplot<-DBHdata%>%
 #   group_by(Style, Front.Back)%>%
 #   summarise(mean=mean(ldbh,na.rm = T),
@@ -470,7 +473,7 @@ treerich<-ggplot(data=tree_rich, aes(x=yard_area, y = richness, color=money))+
 flowersstyplel<-ggplot(data=flowernum, aes(x=yard_area, y = lnumflowers, color=Style))+
   geom_point(size=3, alpha=0.5)+
   geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Life Stage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
   ylab("Log(Num. Flowers)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -478,7 +481,7 @@ flowersstyplel<-ggplot(data=flowernum, aes(x=yard_area, y = lnumflowers, color=S
 flowersstyple<-ggplot(data=flowernum, aes(x=yard_area, y = nflowers, color=Style))+
   geom_point(size=3, alpha=0.5)+
   geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Life Stage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
   ylab("Num. Flowers")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -502,7 +505,7 @@ areafb<-ggplot(data=flowernum, aes(x=yard_area, y = areatot, color=Front.Back))+
 areastylel<-ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Style))+
   geom_point(size=3, alpha=0.5)+
   geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Life Stage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
   ylab("Log(Floral Area)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -510,7 +513,7 @@ areastylel<-ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Style))+
 areastyle<-ggplot(data=flowernum, aes(x=yard_area, y = areatot, color=Style))+
   geom_point(size=3, alpha=0.5)+
   geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Life Stage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
   ylab("Floral Area")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
@@ -553,13 +556,10 @@ legend1=gtable_filter(ggplot_gtable(ggplot_build(colors)), "guide-box")
 grid.draw(legend1)
 
 
-grid.arrange(arrangeGrob(treerich+theme(legend.position="none"),
-                         treerichl+theme(legend.position="none"),
-                         genera+theme(legend.position="none"),
+grid.arrange(arrangeGrob(treerichl+theme(legend.position="none"),
                          general+theme(legend.position="none"),
-                         colors+theme(legend.position="none"),
                          colorsl+theme(legend.position="none"),
-                         ncol=2),legend1, 
+                         ncol=1),legend1, 
              widths=unit.c(unit(1, "npc") - legend1$width, legend1$width),nrow=1)
 
 ###fig 2 - lifestage
@@ -568,10 +568,9 @@ grid.draw(legend2)
 
 
 grid.arrange(arrangeGrob(flowersstyplel+theme(legend.position="none"),
-                         flowersstyple+theme(legend.position="none"),
                          areastylel+theme(legend.position="none"),
-                         areastyle+theme(legend.position="none"),
-                         ncol=2),legend2, 
+                         inv+theme(legend.position="none"),
+                         ncol=1),legend2, 
              widths=unit.c(unit(1, "npc") - legend2$width, legend2$width),nrow=1)
 
 ###fig 3 - frontback
@@ -580,10 +579,8 @@ grid.draw(legend3)
 
 
 grid.arrange(arrangeGrob(stemsfbl+theme(legend.position="none"),
-                         stemsfb+theme(legend.position="none"),
                          areafbl+theme(legend.position="none"),
-                         areafb+theme(legend.position="none"),
-                         ncol=2),legend3, 
+                         ncol=1),legend3, 
              widths=unit.c(unit(1, "npc") - legend3$width, legend3$width),nrow=1)
 
 
@@ -771,7 +768,7 @@ ggplot(pie.across, aes(x = money, y=Sum_colarea/10000, fill=value2))+
   geom_bar(color="black", width = 0.75,stat="identity")+
   scale_x_discrete(limits=c("mid","high"), labels=c("Middle","High"))+
   scale_fill_manual(values=c("blue", "darkviolet", "purple","violetred3", "red","orangered1","orange","goldenrod1","yellow","yellowgreen","green4", "white"))+
-  ylab(expression (paste("Floral Color Area (",~m^2,")")))+
+  ylab(expression (paste("Floral Area (",~m^2,")")))+
   xlab("Income")+
   theme(axis.ticks=element_blank(),
         legend.title=element_blank(),
@@ -870,8 +867,7 @@ lawn<-ggplot(data=scores, aes(x=MDS1, y=MDS2, color=money))+
   ylab("NMDS1")+
   xlab("NMDS2")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  ggtitle("Lawn Communities")+
-  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=money), size=1, linetype=1)
+  ggtitle("Lawn Communities")
 
 #flowers
 floral4<-floral2%>%
