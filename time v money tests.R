@@ -567,8 +567,7 @@ legend2=gtable_filter(ggplot_gtable(ggplot_build(flowersstyple)), "guide-box")
 grid.draw(legend2)
 
 
-grid.arrange(arrangeGrob(flowersstyplel+theme(legend.position="none"),
-                         areastylel+theme(legend.position="none"),
+grid.arrange(arrangeGrob(areastylel+theme(legend.position="none"),
                          inv+theme(legend.position="none"),
                          ncol=1),legend2, 
              widths=unit.c(unit(1, "npc") - legend2$width, legend2$width),nrow=1)
@@ -805,11 +804,11 @@ floral3<-floral2%>%
   spread(Genus, ntot, fill=0)
 
 #doing this based on number of plants, but are the same result if use nflowers or area
-adonis(floral3[8:102]~floral3$money)#p< 0.001; F= 2.638
-adonis(floral3[8:102]~floral3$Style)# p = 0.321; F =1.104
+adonis(floral3[8:101]~floral3$money)#p< 0.001; F= 2.638
+adonis(floral3[8:101]~floral3$Style)# p = 0.321; F =1.104
 
-permutest(betadisper(vegdist(floral3[8:102]), floral3$money, type = "centroid"))
-permutest(betadisper(vegdist(floral3[8:102]), floral3$money, type = "centroid"))
+permutest(betadisper(vegdist(floral3[8:101]), floral3$money, type = "centroid"))
+permutest(betadisper(vegdist(floral3[8:101]), floral3$money, type = "centroid"))
 
 #trees
 trees3<-trees2%>%
@@ -851,15 +850,15 @@ lnmds<-metaMDS(lawn4[3:100], trymax=100)
 scores<-data.frame(lnmds$points)%>%
   bind_cols(plotinfo)
 
-ord<-ordiellipse(lnmds, plotinfo$money, display = "sites", 
-                 kind = "se", conf = 0.95, label = T)
-
-df_ell <- data.frame()
-for(g in levels(scores$money)){
-  df_ell <- rbind(df_ell, cbind(as.data.frame(with(scores[scores$money=="mid",],
-          veganCovEllipse(ord[[mid]]$cov,ord[[mid]]$center,ord[[mid]]$scale)))
-                                ,money=mid))
-}
+# ord<-ordiellipse(lnmds, plotinfo$money, display = "sites", 
+#                  kind = "se", conf = 0.95, label = T)
+# 
+# df_ell <- data.frame()
+# for(g in levels(scores$money)){
+#   df_ell <- rbind(df_ell, cbind(as.data.frame(with(scores[scores$money=="mid",],
+#           veganCovEllipse(ord[[mid]]$cov,ord[[mid]]$center,ord[[mid]]$scale)))
+#                                 ,money=mid))
+# }
 
 lawn<-ggplot(data=scores, aes(x=MDS1, y=MDS2, color=money))+
   geom_point(size=5)+
@@ -883,7 +882,7 @@ floral4<-floral2%>%
 
 plotinfo=floral4[c(1:2)]
 
-fnmds<-metaMDS(floral4[3:97], trymax=100)
+fnmds<-metaMDS(floral4[3:96], trymax=100)
 
 fscores<-data.frame(fnmds$points)%>%
   bind_cols(plotinfo)
