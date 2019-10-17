@@ -935,3 +935,77 @@ grid.arrange(arrangeGrob(lawn+theme(legend.position="none"),
                          trees+theme(legend.position="none"),
                          ncol=1),legend5, 
              widths=unit.c(unit(1, "npc") - legend5$width, legend5$width),nrow=1)
+
+
+###rank abundnace curves
+lawnrank<-lawn2%>%
+  group_by(NB, House, Species.combined)%>%
+  summarize(meancov=mean(Cover))%>%
+  ungroup()%>%
+  group_by(Species.combined)%>%
+  summarize(abund=sum(meancov), freq=length(Species.combined))%>%
+  mutate(Frank=rank(-freq), Arank=rank(-abund), type="lawn")%>%
+  rename(species=Species.combined)
+
+treerank<-trees%>%
+  filter(Tree.species!="no trees")%>%
+  group_by(NB, House, Tree.species)%>%
+  summarize(abund=length(DBH1))%>%
+  ungroup()%>%
+  group_by(Tree.species)%>%
+  summarize(abund=sum(abund), freq=length(Tree.species))%>%
+  mutate(Frank=rank(-freq), Arank=rank(-abund), type="tree")%>%
+  rename(species=Tree.species)
+
+floralrank<-floral2%>%
+  group_by(House_ID, Genus)%>%
+  summarize(totplants=sum(nplants))%>%
+  ungroup%>%
+  group_by(Genus)%>%
+  summarize(abund=sum(totplants), freq=length(Genus))%>%
+  mutate(Frank=rank(-freq), Arank=rank(-abund), type="floral")%>%
+  rename(species=Genus)
+
+all<-rbind(floralrank, treerank, lawnrank)
+
+
+#write.csv(all, "rankcurves_raw.csv", row.names = F)
+rank<-read.csv("rankcurves_clean.csv")
+
+Frank<-rank%>%
+  select(type, species, freq, Frank, native)%>%
+  filter(Frank<11)
+
+Arank<-rank%>%
+  select(type, species, abund, Arank, native)%>%
+  filter(Arank<11)
+freq<-
+ggplot(data=Frank, aes(x=Frank, y=freq, color=as.factor(native)))+
+  geom_point(size=3)+
+  facet_wrap(~type, ncol=1, scales="free")+
+  scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  xlab("Rank")+
+  ylab("Number of Yards Present")+
+  geom_text(aes(label=species), hjust=-.2, vjust=0.5)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))
+abund<-
+ggplot(data=Arank, aes(x=Arank, y=abund, color=as.factor(native)))+
+  geom_point(size=3)+
+  facet_wrap(~type, ncol=1, scales="free")+
+  scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  xlab("Rank")+
+  ylab("Total Abundance")+
+  geom_text(aes(label=species), hjust=-.2, vjust=0.5)+
+  scale_x_continuous(limits=c(-0.5,10.5), breaks=)
+
+legend=gtable_filter(ggplot_gtable(ggplot_build(abund)), "guide-box") 
+grid.draw(legend)
+
+
+grid.arrange(arrangeGrob(freq+theme(legend.position="none"),
+                         abund+theme(legend.position="none"),
+                         ncol=2),legend, 
+             widths=unit.c(unit(1, "npc") - legend$width, legend$width),nrow=1)
+
