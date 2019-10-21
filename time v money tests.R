@@ -997,30 +997,137 @@ ggplot(data=subset(Frank, type=="Flowering Plants"), aes(x=Frank, y=freq, color=
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   xlab("Rank")+
   ylab("Number of Yards Present")+
-  annotate("text", x =2, y = 38, label='Hydrangea')+
-  scale_x_continuous(limits=c(1,11), breaks = c(1:10))
-
-
-
-
-
-abund<-
-ggplot(data=Arank, aes(x=Arank, y=abund, color=as.factor(native)))+
+  annotate("text", x =2.8, y = 37, label='Hydrangea', size=3)+
+  annotate("text", x =3, y = 31, label='Rosa', size=3)+
+  annotate("text", x =4.4, y = 26, label='Rudeckia', size=3)+
+  annotate("text", x =5, y = 24, label='Hosta', size=3)+
+  annotate("text", x =6.8, y = 15, label='Echinaceae', size=3)+
+  annotate("text", x =4.2, y = 13, label='Hemerocallis', size=3)+
+  annotate("text", x =8.3, y = 13.5, label='Tagetes', size=3)+
+  annotate("text", x =6.5, y = 11.5, label='Impatiens', size=3)+
+  annotate("text", x =10, y = 12, label='Salvia', size=3)+
+  annotate("text", x =8.8, y = 10, label='Buddleja', size=3)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  ggtitle("Flowering Plants")+
+  theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
+  
+freq_lawn <- 
+ggplot(data=subset(Frank, type=="Lawn"), aes(x=Frank, y=freq, color=as.factor(native)))+
   geom_point(size=3)+
-  facet_wrap(~type, ncol=1, scales="free")+
   scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   xlab("Rank")+
-  ylab("Total Abundance")+
-  geom_text(aes(label=species), hjust=-.2, vjust=0.5)+
-  scale_x_continuous(limits=c(-0.5,10.5), breaks=)
+  ylab("Number of Yards Present")+
+  annotate("text", x =2.5, y = 79, label='Poa prat.', size=3)+
+  annotate("text", x =4.2, y = 72, label='Festuca arund.', size=3)+
+  annotate("text", x =5.2, y = 66, label='Trifolium repens', size=3)+
+  annotate("text", x =6.5, y = 60, label='Cynodon dactylon', size=3)+
+  annotate("text", x =3, y = 55, label='Digitaria sang.', size=3)+
+  annotate("text", x =8.2, y = 55, label='Taraxacum off.', size=3)+
+  annotate("text", x =5.2, y = 53, label='Oxalis stricta', size=3)+
+  annotate("text", x =9.5, y = 52, label='Viola pap.', size=3)+
+  annotate("text", x =7, y = 47, label='Plantago major', size=3)+
+  annotate("text", x =8.8, y = 42, label='F. rubra', size=3)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  ggtitle("Lawn Species")+
+  theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
+  
+freq_trees<-  
+  ggplot(data=subset(Frank, type=="Trees"), aes(x=Frank, y=freq, color=as.factor(native)))+
+    geom_point(size=3)+
+    scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    xlab("Rank")+
+    ylab("Number of Yards Present")+
+    annotate("text", x =3, y = 25, label='Cornus florida', size=3)+
+    annotate("text", x =5, y = 24, label='Lagerstroemia indica', size=3)+
+    annotate("text", x =5.2, y = 20, label='Acer palmatum', size=3)+
+    annotate("text", x =2.5, y = 17, label='A. sacch.', size=3)+
+    annotate("text", x =6.2, y = 16, label='Ilex opaca', size=3)+
+    annotate("text", x =8.2, y = 17, label='Prunus cultivar', size=3)+
+    annotate("text", x =8.5, y = 13, label='A. rubrum', size=3)+
+    annotate("text", x =6.2, y = 10, label='Morum alba', size=3)+
+    annotate("text", x =7, y = 8, label='Magnolia grand.', size=3)+
+    annotate("text", x =10, y = 9, label='Thuja occ.', size=3)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  ggtitle("Tree Species")+
+  theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
+  
+abund_flower<-
+    ggplot(data=subset(Arank, type=="Flowering Plants"), aes(x=Arank, y=abund, color=as.factor(native)))+
+    geom_point(size=3)+
+    scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    xlab("Rank")+
+    ylab("Abundance")+
+    annotate("text", x =3, y = 223, label='Catharanthus', size=3)+
+    annotate("text", x =3.8, y = 190, label='Hemerocallis', size=3)+
+    annotate("text", x =4.5, y = 180, label='Rudeckia', size=3)+
+    annotate("text", x =5, y = 157, label='Hosta', size=3)+
+    annotate("text", x =6.7, y = 120, label='Hydrangea', size=3)+
+    annotate("text", x =4.5, y = 107, label='Impatiens', size=3)+
+    annotate("text", x =5.5, y = 98, label='Echinacea', size=3)+
+    annotate("text", x =9, y = 94, label='Rosa', size=3)+
+    annotate("text", x =7, y = 80, label='Lysimachia', size=3)+
+    annotate("text", x =9, y = 70, label='Begonia', size=3)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  ggtitle("Flowering Plants")+
+  theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
 
-legend=gtable_filter(ggplot_gtable(ggplot_build(abund)), "guide-box") 
+abund_lawn <-
+  ggplot(data=subset(Arank, type=="Lawn"), aes(x=Arank, y=abund, color=as.factor(native)))+
+    geom_point(size=3)+
+    scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    xlab("Rank")+
+    ylab("Abundance")+
+    annotate("text", x =2.5, y = 2090, label='Poa prat.', size=3)+
+    annotate("text", x =4.3, y = 1215, label='Festuca arund.', size=3)+
+    annotate("text", x =5, y = 963, label='Zoysiagrass', size=3)+
+    annotate("text", x =6.7, y = 806, label='Cynodon dactylon', size=3)+
+    annotate("text", x =7.5, y = 703, label='Trifolium repens', size=3)+
+    annotate("text", x =4.5, y = 620, label='F. rubra', size=3)+
+    annotate("text", x =9.2, y = 597, label='Digitaria sang.', size=3)+
+    annotate("text", x =5, y = 420, label='Glechoma hederacea', size=3)+
+    annotate("text", x =7.6, y = 320, label='Viola pap.', size=3)+
+    annotate("text", x =7.8, y = 200, label='Lolium perenne', size=3)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  ggtitle("Lawn Species")+
+  theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
+  
+abund_tree<-
+  ggplot(data=subset(Arank, type=="Trees"), aes(x=Arank, y=abund, color=as.factor(native)))+
+    geom_point(size=3)+
+    scale_color_manual(name="Native Status", label=c("Not Native", "Native"), values=c("black", "darkgray"))+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+    xlab("Rank")+
+    ylab("Abundance")+
+    annotate("text", x =3, y = 34, label='Ilex opaca', size=3)+
+    annotate("text", x =4, y = 33, label='Cornus florida', size=3)+
+    annotate("text", x =5.5, y = 31, label='Lagerstroemia indica', size=3)+
+    annotate("text", x =6.5, y = 32, label='Thuja occidentalis', size=3)+
+    annotate("text", x =7, y = 29, label='Acer palmatum', size=3)+
+    annotate("text", x =3.8, y = 25, label='A. saccharinum', size=3)+
+    annotate("text", x =8.5, y = 24, label='Prunus cultivar', size=3)+
+    annotate("text", x =10, y = 25, label='Ailanthus alt.', size=3)+
+    annotate("text", x =7.5, y = 18, label='A. rubrum', size=3)+
+    annotate("text", x =8.3, y = 16, label='A. negundo', size=3)+
+  scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  ggtitle("Tree Species")+
+  theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
+
+
+
+legend=gtable_filter(ggplot_gtable(ggplot_build(freq_tree)), "guide-box") 
 grid.draw(legend)
 
 
-grid.arrange(arrangeGrob(freq+theme(legend.position="none"),
-                         abund+theme(legend.position="none"),
+grid.arrange(arrangeGrob(freq_lawn+theme(legend.position="none"),
+                         abund_lawn+theme(legend.position="none"),
+                         freq_flower+theme(legend.position="none"),
+                         abund_flower+theme(legend.position="none"),
+                         freq_trees+theme(legend.position="none"),
+                         abund_tree+theme(legend.position="none"),
                          ncol=2),legend, 
              widths=unit.c(unit(1, "npc") - legend$width, legend$width),nrow=1)
 
