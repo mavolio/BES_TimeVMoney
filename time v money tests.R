@@ -421,7 +421,7 @@ stemsfbl<-ggplot(data=stems2, aes(x=yard_area, y = lstems, color=Front.Back))+
   ylab("Log(Num. Trees)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 4.5, label="A", size=4)
+  annotate("text", x=50, y = 4.5, label="E", size=4)
 # 
 # stemsfb<-ggplot(data=stems2, aes(x=yard_area, y = number, color=Front.Back))+
 #   geom_point(size=3, alpha=0.5)+
@@ -451,11 +451,11 @@ treerichl<-ggplot(data=tree_rich, aes(x=yard_area, y = lrich, color=money))+
 inv<-ggplot(data=inv_rich, aes(x=yard_area, y = richness, color=Style))+
   geom_point(size=3, alpha= 0.5)+
   geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle\nGround", "Senior\nStyles"))+
   ylab("Num. Invasive Sp.")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 5.5, label="B", size=4)
+  annotate("text", x=50, y = 5.5, label="D", size=4)
 
 # dbh_toplot<-DBHdata%>%
 #   group_by(Style, Front.Back)%>%
@@ -496,7 +496,7 @@ areafbl<-ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Front.Back))+
   ylab("Log(Floral Area)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 14, label="B", size=4)
+  annotate("text", x=50, y = 14, label="F", size=4)
 
 # areafb<-ggplot(data=flowernum, aes(x=yard_area, y = areatot, color=Front.Back))+
 #   geom_point(size=5, alpha=0.5)+
@@ -509,11 +509,12 @@ areafbl<-ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Front.Back))+
 areastylel<-ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Style))+
   geom_point(size=3, alpha=0.5)+
   geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle Ground", "Senior Styles"))+
+  scale_color_manual(name="Lifestage", values=c("olivedrab", "navy"), labels=c("Middle\nGround", "Senior\nStyles"))+
   ylab("Log(Floral Area)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 12, label="A", size=4)
+  annotate("text", x=50, y = 12, label="C", size=4)+
+  scale_y_continuous(limits = c(0,12), breaks = c(0,2,4,6,8,10,12))
 
 # areastyle<-ggplot(data=flowernum, aes(x=yard_area, y = areatot, color=Style))+
 #   geom_point(size=3, alpha=0.5)+
@@ -540,14 +541,14 @@ general<-ggplot(data=flower_rich, aes(x=yard_area, y = lrich, color=money))+
 #   xlab("Yard Area")+
 #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-colorsl<-ggplot(data=color_rich, aes(x=yard_area, y = lrich, color=money))+
-  geom_point(size=3, alpha=0.5)+
-  geom_smooth(method = "lm", se=T, size = 2)+
-  scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("Middle", "High"), limits=c("mid","high"))+
-  ylab("Log(Num. Flower Colors)")+
-  xlab("Yard Area")+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 2.8, label="C", size=4)
+# colorsl<-ggplot(data=color_rich, aes(x=yard_area, y = lrich, color=money))+
+#   geom_point(size=3, alpha=0.5)+
+#   geom_smooth(method = "lm", se=T, size = 2)+
+#   scale_color_manual(name="Income", values=c("green4", "deepskyblue"), labels=c("Middle", "High"), limits=c("mid","high"))+
+#   ylab("Log(Num. Flower Colors)")+
+#   xlab("Yard Area")+
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+#   annotate("text", x=50, y = 2.8, label="C", size=4)
 
 # colors<-ggplot(data=color_rich, aes(x=yard_area, y = richness, color=money))+
 #   geom_point(size=3, alpha=0.5)+
@@ -559,35 +560,37 @@ colorsl<-ggplot(data=color_rich, aes(x=yard_area, y = lrich, color=money))+
 
 
 ###fig 1 - income
-legend1=gtable_filter(ggplot_gtable(ggplot_build(colors)), "guide-box") 
+legend1=gtable_filter(ggplot_gtable(ggplot_build(colorsl)), "guide-box") 
 grid.draw(legend1)
 
 
-grid.arrange(arrangeGrob(treerichl+theme(legend.position="none"),
+inc<-grid.arrange(arrangeGrob(treerichl+theme(legend.position="none"),
                          general+theme(legend.position="none"),
-                         colorsl+theme(legend.position="none"),
-                         ncol=1),legend1, 
-             widths=unit.c(unit(1, "npc") - legend1$width, legend1$width),nrow=1)
+                          ncol=2),legend1, 
+                        widths=unit.c(unit(1, "npc") - legend2$width, legend2$width),nrow=1)
 
 ###fig 2 - lifestage
-legend2=gtable_filter(ggplot_gtable(ggplot_build(flowersstyple)), "guide-box") 
+legend2=gtable_filter(ggplot_gtable(ggplot_build(inv)), "guide-box") 
 grid.draw(legend2)
 
 
-grid.arrange(arrangeGrob(areastylel+theme(legend.position="none"),
+life<-grid.arrange(arrangeGrob(areastylel+theme(legend.position="none"),
                          inv+theme(legend.position="none"),
-                         ncol=1),legend2, 
+                         ncol=2),legend2, 
              widths=unit.c(unit(1, "npc") - legend2$width, legend2$width),nrow=1)
 
 ###fig 3 - frontback
-legend3=gtable_filter(ggplot_gtable(ggplot_build(stemsfb)), "guide-box") 
+legend3=gtable_filter(ggplot_gtable(ggplot_build(stemsfbl)), "guide-box") 
 grid.draw(legend3)
 
 
-grid.arrange(arrangeGrob(stemsfbl+theme(legend.position="none"),
+fb<-grid.arrange(arrangeGrob(stemsfbl+theme(legend.position="none"),
                          areafbl+theme(legend.position="none"),
-                         ncol=1),legend3, 
+                         ncol=2),legend3, 
              widths=unit.c(unit(1, "npc") - legend3$width, legend3$width),nrow=1)
+
+bigfig<-grid.arrange(treerichl, general, areastylel, inv, stemsfbl, areafbl, ncol=2)
+
 
 
 ###correlating flower stuff
@@ -1007,6 +1010,7 @@ ggplot(data=subset(Frank, type=="Flowering Plants"), aes(x=Frank, y=freq, color=
   annotate("text", x =6.5, y = 11.5, label='Impatiens', size=3)+
   annotate("text", x =10, y = 12, label='Salvia', size=3)+
   annotate("text", x =8.8, y = 10, label='Buddleja', size=3)+
+  annotate("text", x =Inf, y = Inf, label='C', size=3, hjust=1.5, vjust=1.5)+
   scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
   ggtitle("Flowering Plants")+
   theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
@@ -1029,6 +1033,7 @@ ggplot(data=subset(Frank, type=="Lawn"), aes(x=Frank, y=freq, color=as.factor(na
   annotate("text", x =7, y = 47, label='Plantago major', size=3)+
   annotate("text", x =8.8, y = 42, label='F. rubra', size=3)+
   scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
+  annotate("text", x =Inf, y = Inf, label='A', size=3, hjust=1.5, vjust=1.5)+
   ggtitle("Lawn Species")+
   theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
   
@@ -1049,6 +1054,7 @@ freq_trees<-
     annotate("text", x =6.2, y = 10, label='Morum alba', size=3)+
     annotate("text", x =7, y = 8, label='Magnolia grand.', size=3)+
     annotate("text", x =10, y = 9, label='Thuja occ.', size=3)+
+  annotate("text", x =Inf, y = Inf, label='E', size=3, hjust=1.5, vjust=1.5)+
   scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
   ggtitle("Tree Species")+
   theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
@@ -1070,6 +1076,7 @@ abund_flower<-
     annotate("text", x =9, y = 94, label='Rosa', size=3)+
     annotate("text", x =7, y = 80, label='Lysimachia', size=3)+
     annotate("text", x =9, y = 70, label='Begonia', size=3)+
+  annotate("text", x =Inf, y = Inf, label='D', size=3, hjust=1.5, vjust=1.5)+
   scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
   ggtitle("Flowering Plants")+
   theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
@@ -1091,6 +1098,7 @@ abund_lawn <-
     annotate("text", x =5, y = 420, label='Glechoma hederacea', size=3)+
     annotate("text", x =7.6, y = 320, label='Viola pap.', size=3)+
     annotate("text", x =7.8, y = 200, label='Lolium perenne', size=3)+
+  annotate("text", x =Inf, y = Inf, label='B', size=3, hjust=1.5, vjust=1.5)+
   scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
   ggtitle("Lawn Species")+
   theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
@@ -1112,13 +1120,14 @@ abund_tree<-
     annotate("text", x =10, y = 25, label='Ailanthus alt.', size=3)+
     annotate("text", x =7.5, y = 18, label='A. rubrum', size=3)+
     annotate("text", x =8.3, y = 16, label='A. negundo', size=3)+
+  annotate("text", x =Inf, y = Inf, label='F', size=3, hjust=1.5, vjust=1.5)+
   scale_x_continuous(limits=c(1,11), breaks = c(1:10))+
   ggtitle("Tree Species")+
   theme(plot.title = element_text(size=10), axis.title=element_text(size=10))
 
 
 
-legend=gtable_filter(ggplot_gtable(ggplot_build(freq_tree)), "guide-box") 
+legend=gtable_filter(ggplot_gtable(ggplot_build(freq_trees)), "guide-box") 
 grid.draw(legend)
 
 
