@@ -32,6 +32,8 @@ yardstats<-yardarea%>%
             front=mean(front_yard_area, na.rm = T))%>%
   mutate(diff=front-back)
 
+totarea<-sum(yardarea$yard_area)
+
 #testing life stage categories
 ls<-yardarea%>%
   left_join(NB)
@@ -421,7 +423,7 @@ stemsfbl<-ggplot(data=stems2, aes(x=yard_area, y = lstems, color=Front.Back))+
   ylab("Log(Num. Trees)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 4.5, label="E", size=4)
+  annotate("text", x=50, y = 4.5, label="F", size=4)
 # 
 # stemsfb<-ggplot(data=stems2, aes(x=yard_area, y = number, color=Front.Back))+
 #   geom_point(size=3, alpha=0.5)+
@@ -438,7 +440,7 @@ treerichl<-ggplot(data=tree_rich, aes(x=yard_area, y = lrich, color=money))+
   ylab("Log(Tree Richness)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 2.9, label="A", size=4)
+  annotate("text", x=50, y = 2.9, label="B", size=4)
 
 # treerich<-ggplot(data=tree_rich, aes(x=yard_area, y = richness, color=money))+
 #   geom_point(size=3, alpha= 0.5)+
@@ -496,7 +498,7 @@ areafbl<-ggplot(data=flowernum, aes(x=yard_area, y = larea, color=Front.Back))+
   ylab("Log(Floral Area)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 14, label="F", size=4)
+  annotate("text", x=50, y = 14, label="E", size=4)
 
 # areafb<-ggplot(data=flowernum, aes(x=yard_area, y = areatot, color=Front.Back))+
 #   geom_point(size=5, alpha=0.5)+
@@ -531,7 +533,7 @@ general<-ggplot(data=flower_rich, aes(x=yard_area, y = lrich, color=money))+
   ylab("Log(Num. Floral Genera)")+
   xlab("Yard Area")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  annotate("text", x=50, y = 3.2, label="B", size=4)
+  annotate("text", x=50, y = 3.2, label="A", size=4)
 
 # genera<-ggplot(data=flower_rich, aes(x=yard_area, y = richness, color=money))+
 #   geom_point(size=3, alpha=0.5)+
@@ -589,7 +591,7 @@ fb<-grid.arrange(arrangeGrob(stemsfbl+theme(legend.position="none"),
                          ncol=2),legend3, 
              widths=unit.c(unit(1, "npc") - legend3$width, legend3$width),nrow=1)
 
-bigfig<-grid.arrange(treerichl, general, areastylel, inv, stemsfbl, areafbl, ncol=2)
+bigfig<-grid.arrange(general, treerichl, areastylel, inv, areafbl, stemsfbl , ncol=2)
 
 
 
@@ -1002,9 +1004,9 @@ ggplot(data=subset(Frank, type=="Flowering Plants"), aes(x=Frank, y=freq, color=
   ylab("Number of Yards Present")+
   annotate("text", x =2.8, y = 37, label='Hydrangea', size=3)+
   annotate("text", x =3, y = 31, label='Rosa', size=3)+
-  annotate("text", x =4.4, y = 26, label='Rudeckia', size=3)+
+  annotate("text", x =4.4, y = 26, label='Rudbeckia', size=3)+
   annotate("text", x =5, y = 24, label='Hosta', size=3)+
-  annotate("text", x =6.8, y = 15, label='Echinaceae', size=3)+
+  annotate("text", x =6.8, y = 15, label='Echinacea', size=3)+
   annotate("text", x =4.2, y = 13, label='Hemerocallis', size=3)+
   annotate("text", x =8.3, y = 13.5, label='Tagetes', size=3)+
   annotate("text", x =6.5, y = 11.5, label='Impatiens', size=3)+
@@ -1022,7 +1024,7 @@ ggplot(data=subset(Frank, type=="Lawn"), aes(x=Frank, y=freq, color=as.factor(na
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   xlab("Rank")+
   ylab("Number of Yards Present")+
-  annotate("text", x =2.5, y = 79, label='Poa prat.', size=3)+
+  annotate("text", x =2.5, y = 79, label='Poa pratensis', size=3)+
   annotate("text", x =4.2, y = 72, label='Festuca arund.', size=3)+
   annotate("text", x =5.2, y = 66, label='Trifolium repens', size=3)+
   annotate("text", x =6.5, y = 60, label='Cynodon dactylon', size=3)+
@@ -1051,7 +1053,7 @@ freq_trees<-
     annotate("text", x =6.2, y = 16, label='Ilex opaca', size=3)+
     annotate("text", x =8.2, y = 17, label='Prunus cultivar', size=3)+
     annotate("text", x =8.5, y = 13, label='A. rubrum', size=3)+
-    annotate("text", x =6.2, y = 10, label='Morum alba', size=3)+
+    annotate("text", x =6.2, y = 10, label='Morus alba', size=3)+
     annotate("text", x =7, y = 8, label='Magnolia grand.', size=3)+
     annotate("text", x =10, y = 9, label='Thuja occ.', size=3)+
   annotate("text", x =Inf, y = Inf, label='E', size=3, hjust=1.5, vjust=1.5)+
@@ -1068,7 +1070,7 @@ abund_flower<-
     ylab("Abundance")+
     annotate("text", x =3, y = 223, label='Catharanthus', size=3)+
     annotate("text", x =3.8, y = 190, label='Hemerocallis', size=3)+
-    annotate("text", x =4.5, y = 180, label='Rudeckia', size=3)+
+    annotate("text", x =4.5, y = 180, label='Rudbeckia', size=3)+
     annotate("text", x =5, y = 157, label='Hosta', size=3)+
     annotate("text", x =6.7, y = 120, label='Hydrangea', size=3)+
     annotate("text", x =4.5, y = 107, label='Impatiens', size=3)+
@@ -1088,7 +1090,7 @@ abund_lawn <-
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
     xlab("Rank")+
     ylab("Abundance")+
-    annotate("text", x =2.5, y = 2090, label='Poa prat.', size=3)+
+    annotate("text", x =2.5, y = 2090, label='Poa pratensis', size=3)+
     annotate("text", x =4.3, y = 1215, label='Festuca arund.', size=3)+
     annotate("text", x =5, y = 963, label='Zoysiagrass', size=3)+
     annotate("text", x =6.7, y = 806, label='Cynodon dactylon', size=3)+
