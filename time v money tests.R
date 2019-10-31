@@ -1024,7 +1024,7 @@ ggplot(data=subset(Frank, type=="Lawn"), aes(x=Frank, y=freq, color=as.factor(na
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
   xlab("Rank")+
   ylab("Number of Yards Present")+
-  annotate("text", x =2.5, y = 79, label='Poa pratensis', size=3)+
+  annotate("text", x =3, y = 79, label='Poa pratensis', size=3)+
   annotate("text", x =4.2, y = 72, label='Festuca arund.', size=3)+
   annotate("text", x =5.2, y = 66, label='Trifolium repens', size=3)+
   annotate("text", x =6.5, y = 60, label='Cynodon dactylon', size=3)+
@@ -1090,7 +1090,7 @@ abund_lawn <-
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
     xlab("Rank")+
     ylab("Abundance")+
-    annotate("text", x =2.5, y = 2090, label='Poa pratensis', size=3)+
+    annotate("text", x =3, y = 2090, label='Poa pratensis', size=3)+
     annotate("text", x =4.3, y = 1215, label='Festuca arund.', size=3)+
     annotate("text", x =5, y = 963, label='Zoysiagrass', size=3)+
     annotate("text", x =6.7, y = 806, label='Cynodon dactylon', size=3)+
