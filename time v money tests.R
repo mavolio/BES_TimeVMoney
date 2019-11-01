@@ -312,12 +312,14 @@ flowernum<-floral2%>%
   mutate(Nb=as.integer(NB),
          House=as.integer(House))%>%
   left_join(yardarea)%>%
+  mutate(perflower=areatot/yard_area)%>%
   left_join(NB)%>%
-  mutate(lnumplants=log(nplants+1),
+   mutate(lnumplants=log(nplants+1),
          lnumflowers=log(nflowers+1),
-         larea=log(areatot+1))
+         larea=log(areatot+1),
+         lperfl=log(perflower+1))
 
-hist(flowernum$larea)
+hist(flowernum$lperfl)
 
 #Ancovas num flowers
 summary(aov(lnumplants~Style*money*Front.Back+yard_area, data=flowernum))
@@ -325,6 +327,8 @@ summary(aov(lnumplants~Style*money*Front.Back+yard_area, data=flowernum))
 summary(aov(lnumflowers~Style*money*Front.Back+yard_area, data=flowernum))
 
 summary(aov(larea~Style*money*Front.Back+yard_area, data=flowernum))
+
+summary(aov(lperfl~Style*money*Front.Back, data=flowernum))
 
 ###floral richness
 noflowers_rich<-floral%>%
