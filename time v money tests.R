@@ -92,10 +92,12 @@ lawn_rich<-community_structure(lawn2, abundance.var="Cover", replicate.var = "ho
 
 lawn_analysis<-lawn_rich%>%
   left_join(yardarea)%>%
-  left_join(NB)
+  left_join(NB)%>%
+  rename(lrich=richness,
+         leven=Evar)
 
-hist(lawn_rich$richness)
-hist(log(lawn_rich$Evar))
+hist(lawn_rich$lric)
+hist(log(lawn_rich$leven))
 
 #how many species?
 length(unique(lawn2$Species.combined))#subtract 10 for unknowns
@@ -117,7 +119,7 @@ weeds<-lawn2%>%
   summarize(n=length(House))
 
 #ANCOVA
-summary(aov(richness~Style*money*Location+yard_area, data=lawn_analysis))
+summary(aov(lrich~Style*money*Location+yard_area, data=lawn_analysis))
 #nothing with richness
 
 summary(aov(leven~Style*money*Location+yard_area, data=lawn_analysis))
@@ -125,8 +127,8 @@ summary(aov(leven~Style*money*Location+yard_area, data=lawn_analysis))
 #interaction with money and location for evenness
 
 lawn_toplot<-lawn_analysis%>%
-  summarise(even=mean(Evar,na.rm = T),
-            sd=sd(Evar, na.rm = T),
+  summarise(even=mean(leven,na.rm = T),
+            sd=sd(leven, na.rm = T),
             n=length(even))%>%
   mutate(se=sd/sqrt(n))
 
@@ -139,9 +141,9 @@ ggplot(data=lawn_toplot, aes(x = 0.5, y = even))+
   theme(axis.ticks.x = element_blank(), axis.text.x = element_blank())
 
 lawn_toplotrich<-lawn_analysis%>%
-  summarise(rich=mean(richness,na.rm = T),
-            sd=sd(richness, na.rm = T),
-            n=length(richness))%>%
+  summarise(rich=mean(lrich,na.rm = T),
+            sd=sd(lrich, na.rm = T),
+            n=length(lrich))%>%
   mutate(se=sd/sqrt(n))
 
 ggplot(data=lawn_toplotrich, aes(x=0.5, y = rich))+
@@ -748,7 +750,14 @@ par(xpd=T)
 #   scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
 #   scale_fill_brewer("Income", labels=c("Middle", "High"), palette="Dark2")
 
-
+alldiv<-lawn_analysis%>%
+  left_join(tree_rich)%>%
+  left_join(stems2)%>%
+  left_join(DBHdata)%>%
+  left_join(flowernum)%>%
+  left_join(flower_rich)%>%
+  left_join(color_rich)%>%
+  left_join(inv_rich)
 
 ###color bar chart figure 2
 library(reshape2)
