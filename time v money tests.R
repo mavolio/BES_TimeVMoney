@@ -389,11 +389,13 @@ summary(aov(lrich~Style*money*Front.Back+yard_area, data=color_rich))
 
 ##invasives
 ##tree richness
+
 noinv<-invasive%>%
-  filter(Species.Latin=="none")%>%
+  rename(Nb=NB)%>%
+  right_join(yardarea)%>%
+  filter(is.na(Species.Latin))%>%
   mutate(richness=0)%>%
-  select(NB, House, richness)%>%
-  rename(Nb=NB)
+  select(Nb, House, richness)
 
 invasive2<-invasive%>%
   filter(Species.Latin!="none"&Notes!="not on our list")%>%
