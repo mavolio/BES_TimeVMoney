@@ -218,14 +218,13 @@ lawn2<-lawn%>%
   select(NB, House, Species.combined, F1, F2, B1, B2)%>%
   unique()%>%
   filter(Species.combined!="Dead grass"&Species.combined!="No Lawn")%>%
-  mutate(Front = (F1+ F2)/2, Back = (B1+B2)/2)%>%
+  mutate(Ave = (F1+ F2 + B1+B2)/4)%>%
   select(-F1, -F2, -B1, -B2)%>%
-  gather(Front.Back, Cover, Front:Back)%>%
-  mutate(homeid_loc=paste(NB, House, Front.Back, sep="_"))
+  mutate(homeid_loc=paste(NB, House, sep="_"))
 
 
-lawn_rich<-community_structure(lawn2, abundance.var="Cover", replicate.var = "homeid_loc")%>%
-  separate(homeid_loc, into=c("NB", "House", "Front.Back"))%>%
+lawn_rich<-community_structure(lawn2, abundance.var="Ave", replicate.var = "homeid_loc")%>%
+  separate(homeid_loc, into=c("NB", "House"))%>%
   mutate(Nb=as.integer(NB),
          House=as.integer(House),
          l.leven=log(Evar))%>%
@@ -235,24 +234,25 @@ lawn_analysis<-lawn_rich%>%
   rename(l.rich=richness,
          leven=l.leven)
 
+
 #looking into FB and number of trees
-notrees_stemFB<-trees%>%
+notrees_stem<-trees%>%
   filter(Tree.species=="no trees")%>%
   mutate(num.trees=0)%>%
-  rename(loc=Front.Back)%>%
-  mutate(Front.Back=ifelse(loc=="f", "Front", "Back"))%>%
-  select(NB, House, num.trees, Front.Back)
+  group_by(NB, House)%>%
+  summarise(n=length(num.trees))%>%
+  filter(n==2)%>%
+  mutate(num.trees=0)%>%
+  select(-n)
 
 stems2<-trees%>%
   filter(Tree.species!="no trees")%>%
-  rename(loc=Front.Back)%>%
-  mutate(Front.Back=ifelse(loc=="f", "Front", "Back"))%>%
-  group_by(NB, House, Tree.species, Front.Back)%>%
+  group_by(NB, House, Tree.species)%>%
   summarize(present=length(DBH1))%>%
   mutate(homeid=paste(NB, House, sep="_"))%>%
-  group_by(NB, House, Front.Back)%>%
+  group_by(NB, House)%>%
   summarise(num.trees=sum(present))%>%
-  bind_rows(notrees_stemFB)%>%
+  bind_rows(notrees_stem)%>%
   rename(Nb=NB)%>%
   mutate(l.num.trees=log(num.trees+1))
 
@@ -261,49 +261,57 @@ stems2<-trees%>%
 notrees_rich<-trees%>%
   filter(Tree.species=="no trees")%>%
   mutate(richness=0)%>%
-  select(NB, House, richness, Front.Back)%>%
-  rename(Nb=NB)
+  select(NB, House, richness)%>%
+  rename(Nb=NB)%>%
+  group_by(Nb, House)%>%
+  summarise(n=length(richness))%>%
+  filter(n==2)%>%
+  mutate(richness=0)%>%
+  select(-n)
 
 trees2<-trees%>%
   filter(Tree.species!="no trees")%>%
-  mutate(homeid=paste(NB, House, Front.Back, sep="::"))%>%
+  mutate(homeid=paste(NB, House, sep="::"))%>%
   group_by(homeid, Tree.species)%>%
   summarize(abund=length(Tree.species))
 
 tree_rich<-community_structure(trees2, abundance.var="abund", replicate.var="homeid")%>%
-  separate(homeid, into=c("NB", "House", "Front.Back"))%>%
+  separate(homeid, into=c("NB", "House"))%>%
   select(-Evar)%>%
   mutate(Nb=as.integer(NB), House=as.integer(House))%>%
   select(-NB)%>%
   bind_rows(notrees_rich)%>%
   mutate(t.lrich=log(richness+1))%>%
-  rename(t.rich=richness)%>%
-  rename(loc=Front.Back)%>%
-  mutate(Front.Back=ifelse(loc=="f", "Front", "Back"))%>%
-  select(-loc)
+  rename(t.rich=richness)
 
 ###tree DBH
 notrees_dhb<-trees%>%
   filter(Tree.species=="no trees")%>%
   mutate(DBH=0)%>%
-  select(NB, House, DBH, Tree.species, Front.Back)
+  select(NB, House, DBH, Tree.species)%>%
+  group_by(NB, House)%>%
+  summarise(n=length(DBH))%>%
+  filter(n==2)%>%
+  mutate(DBH=0)%>%
+  select(-n)%>%
+  mutate(Tree.species="no trees")
 
 dbh_onetrunk<-trees%>%
   filter(is.na(DBH2), !is.na(DBH1))%>%
   rename(DBH=DBH1)%>%
-  select(NB, House, Front.Back, Tree.species, DBH)
+  select(NB, House, Tree.species, DBH)
 
 dbh_multiple<-trees%>%
   filter(!is.na(DBH2))%>%
-  group_by(NB, House, Front.Back, Tree.species)%>%
+  group_by(NB, House, Tree.species)%>%
   select(-notes, -dbh.unit)%>%
   mutate(rep=rank(DBH1, ties.method = "random"))%>%
-  group_by(NB, House, Front.Back, Tree.species, rep)%>%
+  group_by(NB, House, Tree.species, rep)%>%
   gather(trunk, measure, DBH1:DBH6)%>%
   na.omit()%>%
   mutate(square=measure*measure)%>%
   ungroup()%>%
-  group_by(NB, House, Front.Back, Tree.species, rep)%>%
+  group_by(NB, House, Tree.species, rep)%>%
   summarize(DBHsum=sum(square))%>%
   mutate(DBH=sqrt(DBHsum))%>%
   select(-DBHsum, -rep)
@@ -311,21 +319,17 @@ dbh_multiple<-trees%>%
 DBHdata<-dbh_multiple%>%
   bind_rows(dbh_onetrunk)%>%
   bind_rows(notrees_dhb)%>%
-  group_by(NB, House, Front.Back)%>%
+  group_by(NB, House)%>%
   summarise(DBH=sum(DBH))%>%
   rename(Nb=NB)%>%
-  mutate(ldbh=log(DBH+1))%>%
-  rename(loc=Front.Back)%>%
-  mutate(Front.Back=ifelse(loc=="f", "Front", "Back"))%>%
-  select(-loc)
-
+  mutate(ldbh=log(DBH+1))
 
 ##floral
 floral2<-floral%>% 
   filter(Flower.Width..cm.!="", Genus!="NoFlowers")%>%
   mutate(numflowers=X.F.stems*ave_flower_perstem,
          area=as.numeric(as.character(Flower.Width..cm.))*as.numeric(as.character(Flower.Length..cm.))*numflowers)%>%
-  group_by(House_ID, Genus, Front.Back)%>%
+  group_by(House_ID, Genus)%>%
   summarize(nplants=sum(X..F.plants),
             nflowers=sum(numflowers),
             areatot=sum(area))
@@ -335,16 +339,23 @@ noflowers_num<-floral%>%
   mutate(nplants=0,
          nflowers=0,
          areatot=0)%>%
-  select(House_ID, Front.Back, nplants, nflowers, areatot)
+  select(House_ID, nplants, nflowers, areatot)%>%
+  group_by(House_ID)%>%
+  summarise(n=length(nplants))%>%
+  filter(n==2)%>%
+  mutate(nplants=0,
+         nflowers=0,
+         areatot=0)%>%
+  select(-n)
 
 flowernum<-floral2%>%
-  group_by(House_ID, Front.Back)%>%
+  group_by(House_ID)%>%
   summarise(nplants=sum(nplants),
             nflowers=sum(nflowers),
             areatot=sum(areatot))%>%
   bind_rows(noflowers_num)%>%
-  separate(House_ID, into=c("NB", "House"))%>%
-  mutate(Nb=as.integer(NB),
+  separate(House_ID, into=c("Nb", "House"))%>%
+  mutate(Nb=as.integer(Nb),
          House=as.integer(House))%>%
   mutate(lnumplants=log(nplants+1),
          lnumflowers=log(nflowers+1),
@@ -354,14 +365,15 @@ flowernum<-floral2%>%
 noflowers_rich<-floral%>%
   filter(Genus=="NoFlowers")%>%
   mutate(richness=0, Evar=NA)%>%
-  select(House_ID,richness, Evar, Front.Back)%>%
+  group_by(House_ID)%>%
+  summarize(n=length(richness))%>%
+  filter(n==2)%>%
+  mutate(richness=0, Evar=NA)%>%
+  select(House_ID,richness, Evar)%>%
   separate(House_ID, into = c("NB", "House"))
 
-floral3<-floral2%>%
-  mutate(homeid=paste(House_ID, Front.Back, sep="_"))
-
-flower_rich<-community_structure(floral3, abundance.var="nplants", replicate.var="homeid")%>%
-  separate(homeid, into=c("NB", "House", "Front.Back"))%>%
+flower_rich<-community_structure(floral2, abundance.var="nplants", replicate.var="House_ID")%>%
+  separate(House_ID, into=c("NB", "House"))%>%
   bind_rows(noflowers_rich)%>%
   select(-Evar)%>%
   mutate(Nb=as.integer(NB), House=as.integer(House))%>%
@@ -372,18 +384,21 @@ flower_rich<-community_structure(floral3, abundance.var="nplants", replicate.var
 color<-floral%>%
   mutate(fl.color=paste(color1, color2, sep=""))%>%
   filter(fl.color!="NoFlowers")%>%
-  group_by(House_ID, Front.Back, fl.color)%>%
-  summarize(fl.colors=length(fl.color))%>%
-  mutate(homeid=paste(House_ID, Front.Back, sep="_"))
+  group_by(House_ID, fl.color)%>%
+  summarize(fl.colors=length(fl.color))
 
 nocolor<-floral%>%
   filter(Genus=="NoFlowers")%>%
   mutate(richness=0)%>%
   separate(House_ID, into = c("NB","House"))%>%
-  select(NB, House, Front.Back, richness)
+  group_by(NB, House)%>%
+  summarize(n=length(richness))%>%
+  filter(n==2)%>%
+  mutate(richness=0)%>%
+  select(-n)
 
-color_rich<-community_structure(color, abundance.var="fl.colors", replicate.var="homeid")%>%
-  separate(homeid, into=c("NB", "House", "Front.Back"))%>%
+color_rich<-community_structure(color, abundance.var="fl.colors", replicate.var="House_ID")%>%
+  separate(House_ID, into=c("NB", "House"))%>%
   bind_rows(nocolor)%>%
   select(-Evar)%>%
   mutate(Nb=as.integer(NB), House=as.integer(House))%>%
@@ -410,13 +425,22 @@ invasive2<-invasive%>%
          present=1)
 
 inv_rich<-community_structure(invasive2, abundance.var="present", replicate.var="homeid")%>%
-  separate(homeid, into=c("NB", "House"))%>%
+  separate(homeid, into=c("Nb", "House"))%>%
   select(-Evar)%>%
-  mutate(Nb=as.integer(NB), House=as.integer(House))%>%
+  mutate(Nb=as.integer(Nb), House=as.integer(House))%>%
   bind_rows(noinv)%>%
   mutate(i.lrich=log(richness+1))%>%
   rename(i.rich=richness)
 
 
+alldiv2<-lawn_analysis%>%
+  full_join(tree_rich)%>%
+  full_join(stems2)%>%
+  full_join(DBHdata)%>%
+  full_join(inv_rich)%>%
+  full_join(flower_rich)%>%
+  full_join(color_rich)%>%
+  full_join(flowernum)
+
 #export invasive alone b/c only at house level
-write.csv(inv_rich, "Invasive_Richness.csv", row.names=F)
+write.csv(alldiv2, "All_Diversity_House.csv", row.names=F)
