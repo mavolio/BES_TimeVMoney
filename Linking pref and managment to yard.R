@@ -1,5 +1,5 @@
 setwd('C:\\Users\\megha\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
- setwd('~/Dropbox/BES Research/Time V Money/Data/Cleaned Data')
+ setwd('C:\\Users\\mavolio2\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
 
 #WD for Allie
 setwd("C:\\Users\\ablanch4\\Dropbox\\Time V Money\\Data\\Cleaned Data\\")# put path here
@@ -20,33 +20,65 @@ survey<-read.csv("2018 Homeowner_Survey Data_081219.csv")%>%
 yardarea<-read.csv("YardArea.csv")%>%
   rename(homeid=House_ID)%>%
   mutate(homeid=as.character(homeid))
+invasive<-read.csv("Invasives_Balt18_cleaned.csv")
 
 
+###same thing but no F/B
 ##lawns
 lawn2<-lawn%>%
   select(NB, House, Species.combined, F1, F2, B1, B2)%>%
   unique()%>%
   filter(Species.combined!="Dead grass"&Species.combined!="No Lawn")%>%
-  mutate(cover = (F1+ F2 + B1 + B2)/4)%>%
+  mutate(Ave = (F1+ F2 + B1+B2)/4)%>%
   select(-F1, -F2, -B1, -B2)%>%
-  mutate(homeid=paste(NB, House, sep="_"))
+  mutate(homeid_loc=paste(NB, House, sep="_"))
 
 
-lawn_rich<-community_structure(lawn2, abundance.var="cover", replicate.var = "homeid")%>%
-  separate(homeid, into=c("NB", "House"))%>%
+lawn_rich<-community_structure(lawn2, abundance.var="Ave", replicate.var = "homeid_loc")%>%
+  separate(homeid_loc, into=c("NB", "House"))%>%
   mutate(Nb=as.integer(NB),
          House=as.integer(House),
-         leven=log(Evar))
+         l.leven=log(Evar))%>%
+  select(-NB)
+
+lawn_analysis<-lawn_rich%>%
+  rename(l.rich=richness,
+         leven=l.leven)
+
+
+#looking into FB and number of trees
+notrees_stem<-trees%>%
+  filter(Tree.species=="no trees")%>%
+  mutate(num.trees=0)%>%
+  group_by(NB, House)%>%
+  summarise(n=length(num.trees))%>%
+  filter(n==2)%>%
+  mutate(num.trees=0)%>%
+  select(-n)
+
+stems2<-trees%>%
+  filter(Tree.species!="no trees")%>%
+  group_by(NB, House, Tree.species)%>%
+  summarize(present=length(DBH1))%>%
+  mutate(homeid=paste(NB, House, sep="_"))%>%
+  group_by(NB, House)%>%
+  summarise(num.trees=sum(present))%>%
+  bind_rows(notrees_stem)%>%
+  rename(Nb=NB)%>%
+  mutate(l.num.trees=log(num.trees+1))
+
 
 ##tree richness
 notrees_rich<-trees%>%
   filter(Tree.species=="no trees")%>%
-  group_by(NB, House)%>%
-  summarize(n=length(Front.Back))%>%
-  filter(n!=1)%>%
   mutate(richness=0)%>%
   select(NB, House, richness)%>%
-  rename(Nb=NB)
+  rename(Nb=NB)%>%
+  group_by(Nb, House)%>%
+  summarise(n=length(richness))%>%
+  filter(n==2)%>%
+  mutate(richness=0)%>%
+  select(-n)
 
 trees2<-trees%>%
   filter(Tree.species!="no trees")%>%
@@ -58,20 +90,22 @@ tree_rich<-community_structure(trees2, abundance.var="abund", replicate.var="hom
   separate(homeid, into=c("NB", "House"))%>%
   select(-Evar)%>%
   mutate(Nb=as.integer(NB), House=as.integer(House))%>%
+  select(-NB)%>%
   bind_rows(notrees_rich)%>%
-  left_join(yardarea)%>%
-  left_join(NB)%>%
-  mutate(lrich=log(richness+1))
+  mutate(t.lrich=log(richness+1))%>%
+  rename(t.rich=richness)
 
-hist(tree_rich$lrich)
 ###tree DBH
 notrees_dhb<-trees%>%
   filter(Tree.species=="no trees")%>%
-  group_by(NB, House)%>%
-  summarize(n=length(Front.Back))%>%
-  filter(n!=1)%>%
   mutate(DBH=0)%>%
-  select(NB, House, DBH)
+  select(NB, House, DBH, Tree.species)%>%
+  group_by(NB, House)%>%
+  summarise(n=length(DBH))%>%
+  filter(n==2)%>%
+  mutate(DBH=0)%>%
+  select(-n)%>%
+  mutate(Tree.species="no trees")
 
 dbh_onetrunk<-trees%>%
   filter(is.na(DBH2), !is.na(DBH1))%>%
@@ -80,29 +114,26 @@ dbh_onetrunk<-trees%>%
 
 dbh_multiple<-trees%>%
   filter(!is.na(DBH2))%>%
-  group_by(NB, House,  Tree.species)%>%
+  group_by(NB, House, Tree.species)%>%
   select(-notes, -dbh.unit)%>%
   mutate(rep=rank(DBH1, ties.method = "random"))%>%
-  group_by(NB, House,  Tree.species, rep)%>%
+  group_by(NB, House, Tree.species, rep)%>%
   gather(trunk, measure, DBH1:DBH6)%>%
   na.omit()%>%
   mutate(square=measure*measure)%>%
   ungroup()%>%
-  group_by(NB, House,  Tree.species, rep)%>%
+  group_by(NB, House, Tree.species, rep)%>%
   summarize(DBHsum=sum(square))%>%
   mutate(DBH=sqrt(DBHsum))%>%
   select(-DBHsum, -rep)
 
 DBHdata<-dbh_multiple%>%
   bind_rows(dbh_onetrunk)%>%
+  bind_rows(notrees_dhb)%>%
   group_by(NB, House)%>%
   summarise(DBH=sum(DBH))%>%
   rename(Nb=NB)%>%
-  bind_rows(notrees_dhb)%>%
-  left_join(yardarea)%>%
-  left_join(NB)%>%
   mutate(ldbh=log(DBH+1))
-
 
 ##floral
 floral2<-floral%>% 
@@ -116,14 +147,17 @@ floral2<-floral%>%
 
 noflowers_num<-floral%>%
   filter(Genus=="NoFlowers")%>%
-  group_by(House_ID)%>%
-  summarize(n=length(Front.Back))%>%
-  filter(n!=1)%>%
   mutate(nplants=0,
          nflowers=0,
          areatot=0)%>%
   select(House_ID, nplants, nflowers, areatot)%>%
-  unique()
+  group_by(House_ID)%>%
+  summarise(n=length(nplants))%>%
+  filter(n==2)%>%
+  mutate(nplants=0,
+         nflowers=0,
+         areatot=0)%>%
+  select(-n)
 
 flowernum<-floral2%>%
   group_by(House_ID)%>%
@@ -131,35 +165,32 @@ flowernum<-floral2%>%
             nflowers=sum(nflowers),
             areatot=sum(areatot))%>%
   bind_rows(noflowers_num)%>%
-  separate(House_ID, into=c("NB", "House"))%>%
-  mutate(Nb=as.integer(NB),
+  separate(House_ID, into=c("Nb", "House"))%>%
+  mutate(Nb=as.integer(Nb),
          House=as.integer(House))%>%
   mutate(lnumplants=log(nplants+1),
          lnumflowers=log(nflowers+1),
          larea=log(areatot+1))
 
-hist(flowernum$larea)
-
-
 ###floral richness
 noflowers_rich<-floral%>%
   filter(Genus=="NoFlowers")%>%
+  mutate(richness=0, Evar=NA)%>%
   group_by(House_ID)%>%
-  summarize(n=length(Front.Back))%>%
-  filter(n!=1)%>%
+  summarize(n=length(richness))%>%
+  filter(n==2)%>%
   mutate(richness=0, Evar=NA)%>%
   select(House_ID,richness, Evar)%>%
   separate(House_ID, into = c("NB", "House"))
-
 
 flower_rich<-community_structure(floral2, abundance.var="nplants", replicate.var="House_ID")%>%
   separate(House_ID, into=c("NB", "House"))%>%
   bind_rows(noflowers_rich)%>%
   select(-Evar)%>%
   mutate(Nb=as.integer(NB), House=as.integer(House))%>%
-  mutate(lrich=log(richness+1))
-
-hist(flower_rich$lrich)
+  mutate(f.lrich=log(richness+1))%>%
+  rename(f.rich=richness)%>%
+  select(-NB)
 
 color<-floral%>%
   mutate(fl.color=paste(color1, color2, sep=""))%>%
@@ -169,25 +200,92 @@ color<-floral%>%
 
 nocolor<-floral%>%
   filter(Genus=="NoFlowers")%>%
-  group_by(House_ID)%>%
-  summarize(n=length(Front.Back))%>%
-  filter(n!=1)%>%
   mutate(richness=0)%>%
   separate(House_ID, into = c("NB","House"))%>%
-  select(NB, House, richness)
+  group_by(NB, House)%>%
+  summarize(n=length(richness))%>%
+  filter(n==2)%>%
+  mutate(richness=0)%>%
+  select(-n)
 
 color_rich<-community_structure(color, abundance.var="fl.colors", replicate.var="House_ID")%>%
   separate(House_ID, into=c("NB", "House"))%>%
   bind_rows(nocolor)%>%
+  select(-Evar)%>%
   mutate(Nb=as.integer(NB), House=as.integer(House))%>%
-  mutate(lcrich=log(richness+1))%>%
-  select(-Evar, -richness)
+  mutate(c.lrich=log(richness+1))%>%
+  rename(c.rich=richness)%>%
+  select(-NB)
+
+
+##invasives
+yardarea<-read.csv("YardArea.csv")%>%
+  rename(homeid=House_ID)%>%
+  mutate(homeid=as.character(homeid))
+
+noinv<-invasive%>%
+  rename(Nb=NB)%>%
+  right_join(yardarea)%>%
+  filter(is.na(Species.Latin))%>%
+  mutate(richness=0)%>%
+  select(Nb, House, richness)
+
+invasive2<-invasive%>%
+  filter(Species.Latin!="none"&Notes!="not on our list")%>%
+  mutate(homeid=paste(NB, House, sep="::"),
+         present=1)
+
+inv_rich<-community_structure(invasive2, abundance.var="present", replicate.var="homeid")%>%
+  separate(homeid, into=c("Nb", "House"))%>%
+  select(-Evar)%>%
+  mutate(Nb=as.integer(Nb), House=as.integer(House))%>%
+  bind_rows(noinv)%>%
+  mutate(i.lrich=log(richness+1))%>%
+  rename(i.rich=richness)
+
+
+alldiv2<-lawn_analysis%>%
+  full_join(tree_rich)%>%
+  full_join(stems2)%>%
+  full_join(DBHdata)%>%
+  full_join(inv_rich)%>%
+  full_join(flower_rich)%>%
+  full_join(color_rich)%>%
+  full_join(flowernum)
 
 #survey
 survey1<-survey%>%
   separate(House_ID, into=c("Nb","House"), sep="_")%>%
   mutate(Nb=as.integer(Nb), House=as.integer(as.character(House)))%>%
   left_join(NB)
+
+timespent<-survey1%>%
+  select(Nb, House, Style, money, C101.1)%>%
+  filter(C101.1!="No answer")%>%
+  mutate(C101.1=as.numeric(as.character(C101.1)))
+
+summary(aov(C101.1~Style*money, data=timespent))
+
+avetime<-timespent%>%
+  group_by(Nb)%>%
+  summarize(time=mean(C101.1))
+
+resident<-survey1%>%
+  select(Nb, Style, House, money, D2)%>%
+  filter(D2!="No answer")%>%
+  mutate(D2=as.numeric(as.character(D2)))
+
+averes<-resident%>%
+  group_by(Nb)%>%
+  summarize(time=mean(D2))
+
+paywork<-survey1%>%
+  mutate(pay=ifelse(C104==1|C203==1|C5==1, 1, 0))%>%
+  select(Nb, House, pay)
+
+survey2<-timespent%>%
+  left_join(resident)%>%
+  left_join(paywork)
 
 
 ####1. Linking lawn care to lawn richness
@@ -399,4 +497,35 @@ p6<-
   xlab("Importance Planting Shade Trees")
 grid.arrange(p5, p6, ncol=2)
 
+alldiv3<-alldiv2%>%
+  left_join(survey2)
 
+with(alldiv3, cor.test(c.lrich, C101.1))#num colors
+with(alldiv3, cor.test(f.lrich, C101.1))#num genera
+with(alldiv3, cor.test(lnumplants, C101.1))
+with(alldiv3, cor.test(lnumflowers, C101.1))
+with(alldiv3, cor.test(larea, C101.1))
+with(alldiv3, cor.test(l.rich, C101.1))#lawn rich
+with(alldiv3, cor.test(i.lrich, C101.1))#inv sp
+with(alldiv3, cor.test(t.lrich, C101.1))#tree rich
+with(alldiv3, cor.test(l.num.trees, C101.1))#num trees
+
+with(alldiv3, cor.test(c.lrich, D2))#num colors
+with(alldiv3, cor.test(f.lrich, D2))#num genera
+with(alldiv3, cor.test(lnumplants, D2))
+with(alldiv3, cor.test(lnumflowers, D2))
+with(alldiv3, cor.test(larea, D2))
+with(alldiv3, cor.test(l.rich, D2))#lawn rich
+with(alldiv3, cor.test(i.lrich, D2))#inv sp
+with(alldiv3, cor.test(t.lrich, D2))#tree rich
+with(alldiv3, cor.test(l.num.trees, D2))#num trees
+
+with(alldiv3, cor.test(c.lrich, pay))#num colors
+with(alldiv3, cor.test(f.lrich, pay))#num genera
+with(alldiv3, cor.test(lnumplants, pay))
+with(alldiv3, cor.test(lnumflowers, pay))
+with(alldiv3, cor.test(larea, pay))
+with(alldiv3, cor.test(l.rich, pay))#lawn rich
+with(alldiv3, cor.test(i.lrich, pay))#inv sp
+with(alldiv3, cor.test(t.lrich, pay))#tree rich
+with(alldiv3, cor.test(l.num.trees, pay))#num trees
