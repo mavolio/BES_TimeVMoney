@@ -636,11 +636,11 @@ colnames(codyndat_allmetrics)# double check columns are correct
 pairs(flowersall[,c(4, 18, 20:22)],upper.panel = panel.cor, cex.axis = 2, labels=c("Num.\n Colors", "Num.\nGenera", "Num.\nPlants", "Num.\nFlowers", "Floral\nArea"))
 par(xpd=T)
 
-# #survey
-# survey1<-survey%>%
-#   separate(House_ID, into=c("Nb","House"), sep="_")%>%
-#   mutate(Nb=as.integer(Nb))%>%
-#   left_join(NB)
+#survey
+survey1<-survey%>%
+  separate(House_ID, into=c("Nb","House"), sep="_")%>%
+  mutate(Nb=as.integer(Nb))%>%
+  left_join(NB)
 # 
 # satisfied<-survey1%>%
 #   filter(A1!="No answer")%>%
@@ -707,50 +707,72 @@ par(xpd=T)
 #   xlab("Life Stage")+
 #   scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
 #   scale_fill_brewer("Income", labels=c("High", "Middle"), palette="Dark2")
-# 
-# ####what are people actually doing in their yards?
-# timespent<-survey1%>%
-#   select(Style, money, C101.1)%>%
-#   filter(C101.1!="No answer")%>%
-#   mutate(C101.1=as.numeric(as.character(C101.1)))
-# 
-# summary(aov(C101.1~Style*money, data=timespent))
-# 
-# ts_toplot<-timespent%>%
-#   group_by(money, Style)%>%
-#   summarize(mean=mean(C101.1, na.rm=T),
-#             sd=sd(C101.1),
-#             n=length(C101.1))%>%
-#   mutate(se=sd/sqrt(n),
-#          group=factor(money, levels=c("mid","high")))
-# 
-# ggplot(data=ts_toplot, aes(x = Style, y = mean, fill=group))+
-#   geom_bar(stat = "identity", position = position_dodge(0.9))+
-#   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-#                 width=.2,  position=position_dodge(.9))+
-#   ylab("Time Spent (hours/week)")+
-#   xlab("Life Stage")+
-#   scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
-#   scale_fill_brewer("Income", labels=c("Middle", "High"), palette="Dark2")
-# 
-# paywork<-survey1%>%
-#   mutate(pay=ifelse(C104==1|C203==1|C5==1, 1, 0))
-# 
-# summary(aov(pay~Style*money, data=paywork))
-# 
-# pay_toplot<-paywork%>%
-#   group_by(money, Style)%>%
-#   summarize(sum=sum(pay, na.rm=T),
-#             n=length(pay))%>%
-#   mutate(prop=(sum/n)*100,
-#          group=factor(money, levels=c("mid","high")))
-# 
-# ggplot(data=pay_toplot, aes(x = Style, y = prop, fill=group))+
-#   geom_bar(stat = "identity", position = position_dodge(0.9))+
-#   ylab("% Pay for Yard Work")+
-#   xlab("Life Stage")+
-#   scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
-#   scale_fill_brewer("Income", labels=c("Middle", "High"), palette="Dark2")
+
+####what are people actually doing in their yards?
+timespent<-survey1%>%
+  select(Nb, House, Style, money, C101.1)%>%
+  filter(C101.1!="No answer")%>%
+  mutate(C101.1=as.numeric(as.character(C101.1)))
+
+summary(aov(C101.1~Style*money, data=timespent))
+
+avetime<-timespent%>%
+  group_by(Nb)%>%
+  summarize(time=mean(C101.1))
+
+resident<-survey1%>%
+  select(Nb, Style, House, money, D2)%>%
+  filter(D2!="No answer")%>%
+  mutate(D2=as.numeric(as.character(D2)))
+
+averes<-resident%>%
+  group_by(Nb)%>%
+  summarize(time=mean(D2))
+
+survey2<-timespent%>%
+  left_join(resident)
+
+ts_toplot<-timespent%>%
+  group_by(money, Style)%>%
+  summarize(mean=mean(C101.1, na.rm=T),
+            sd=sd(C101.1),
+            n=length(C101.1))%>%
+  mutate(se=sd/sqrt(n),
+         group=factor(money, levels=c("mid","high")))
+
+ggplot(data=ts_toplot, aes(x = Style, y = mean, fill=group))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=.2,  position=position_dodge(.9))+
+  ylab("Time Spent (hours/week)")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("Middle", "High"), palette="Dark2")
+
+paywork<-survey1%>%
+  mutate(pay=ifelse(C104==1|C203==1|C5==1, 1, 0))
+
+summary(aov(pay~Style*money, data=paywork))
+
+pay_toplot<-paywork%>%
+  group_by(money, Style)%>%
+  summarize(sum=sum(pay, na.rm=T),
+            n=length(pay))%>%
+  mutate(prop=(sum/n)*100,
+         group=factor(money, levels=c("mid","high")))
+
+pay_nb<-paywork%>%
+  group_by(Nb)%>%
+  summarize(sum=sum(pay, na.rm=T),
+            n=length(pay))%>%
+  mutate(prop=(sum/n)*100)
+
+ggplot(data=pay_toplot, aes(x = Style, y = prop, fill=group))+
+  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  ylab("% Pay for Yard Work")+
+  xlab("Life Stage")+
+  scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
+  scale_fill_brewer("Income", labels=c("Middle", "High"), palette="Dark2")
 
 alldiv<-lawn_analysis%>%
   left_join(tree_rich)%>%
