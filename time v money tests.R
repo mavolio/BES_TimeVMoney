@@ -720,6 +720,12 @@ avetime<-timespent%>%
   group_by(Nb)%>%
   summarize(time=mean(C101.1))
 
+
+avetime<-timespent%>%
+  group_by(Style, money)%>%
+  summarize(time=mean(C101.1))
+
+
 resident<-survey1%>%
   select(Nb, Style, House, money, D2)%>%
   filter(D2!="No answer")%>%
@@ -752,7 +758,16 @@ ggplot(data=ts_toplot, aes(x = Style, y = mean, fill=group))+
 paywork<-survey1%>%
   mutate(pay=ifelse(C104==1|C203==1|C5==1, 1, 0))
 
-summary(aov(pay~Style*money, data=paywork))
+
+paywork2<-survey1%>%
+  mutate(C104.1=ifelse(C104==1, 1, 0), 
+         C203.1=ifelse(C203==1, 1, 0), 
+         C5.1=ifelse(C5==1, 1, 0),
+         drop=ifelse(C104=="No answer"&C203=="No answer"&C5=="No answer", 1, 0))%>%
+  mutate(pay=C104.1+C203.1+C5.1)%>%
+  filter(drop!=1)
+
+summary(aov(pay~Style*money, data=paywork2))
 
 pay_toplot<-paywork%>%
   group_by(money, Style)%>%
@@ -768,7 +783,7 @@ pay_nb<-paywork%>%
   mutate(prop=(sum/n)*100)
 
 ggplot(data=pay_toplot, aes(x = Style, y = prop, fill=group))+
-  geom_bar(stat = "identity", position = position_dodge(0.9))+
+  geom_bar(stat = "identity", position = position_dodge/(0.9))+
   ylab("% Pay for Yard Work")+
   xlab("Life Stage")+
   scale_x_discrete(labels=c("Middle Ground", "Senior Styles"))+
