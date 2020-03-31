@@ -570,7 +570,7 @@ general<-ggplot(data=flower_rich, aes(x=yard_area, y = lrich, color=money))+
 
 
 ###fig 1 - income
-legend1=gtable_filter(ggplot_gtable(ggplot_build(colorsl)), "guide-box") 
+legend1=gtable_filter(ggplot_gtable(ggplot_build(treerichl)), "guide-box") 
 grid.draw(legend1)
 
 
@@ -601,7 +601,7 @@ fb<-grid.arrange(arrangeGrob(stemsfbl+theme(legend.position="none"),
 
 bigfig<-grid.arrange(general, treerichl, areastylel, inv, areafbl, stemsfbl , ncol=2)
 
-
+ggsave("C:\\Users\\mavolio2\\Dropbox\\Manuscripts\\TimeMoney\\reviews\\Final to publish\\Proof\\ResultsFig.jpg", plot=bigfig, width=180, height=200, unit="mm", dpi=300 )
 
 ###correlating flower stuff
 flowersall<-color_rich%>%
@@ -633,8 +633,15 @@ panel.cor <- function(x, y, digits = 3, prefix = "", cex.cor, ...){
 
 colnames(codyndat_allmetrics)# double check columns are correct
 #comparing absolute S and E changes
+
+jpeg("C:\\Users\\mavolio2\\Dropbox\\Manuscripts\\TimeMoney\\reviews\\Final to publish\\Proof\\PairsPlot.jpeg", width=150, height=150, unit="mm", res=300)
+
 pairs(flowersall[,c(4, 18, 20:22)],upper.panel = panel.cor, cex.axis = 2, labels=c("Num.\n Colors", "Num.\nGenera", "Num.\nPlants", "Num.\nFlowers", "Floral\nArea"))
 par(xpd=T)
+
+dev.off()
+
+ggsave("C:\\Users\\mavolio2\\Dropbox\\Manuscripts\\TimeMoney\\reviews\\Final to publish\\Proof\\PairsFig.jpg", plot=pairs, width=120, height=120, unit="mm", dpi=300 )
 
 #survey
 survey1<-survey%>%
@@ -827,7 +834,7 @@ pie.across<-melt(pie.test.1, id=c("Nb","House","Color_area","money"))%>%
 pie.across$value2<-factor(pie.across$value, levels = c("blue","purple-blue", "purple","red-purple", "red", "red-orange","orange","yellow-orange","yellow", "green-yellow","green","white"))
 
 #graph!
-ggplot(pie.across, aes(x = money, y=Sum_colarea/10000, fill=value2))+
+floralareas<-ggplot(pie.across, aes(x = money, y=Sum_colarea/10000, fill=value2))+
   geom_bar(color="black", width = 0.75,stat="identity")+
   scale_x_discrete(limits=c("mid","high"), labels=c("Middle","High"))+
   scale_fill_manual(values=c("blue", "darkviolet", "purple","violetred3", "red","orangered1","orange","goldenrod1","yellow","yellowgreen","green4", "white"))+
@@ -837,6 +844,7 @@ ggplot(pie.across, aes(x = money, y=Sum_colarea/10000, fill=value2))+
         legend.title=element_blank(),
         panel.grid=element_blank(), legend.position = "none")
 
+ggsave("C:\\Users\\mavolio2\\Dropbox\\Manuscripts\\TimeMoney\\reviews\\Final to publish\\Proof\\FloralFig.jpg", plot=floralareas, width=85, height=100, unit="mm", dpi=300 )
 
 ####Multivariate analyses of community data
 
@@ -997,11 +1005,13 @@ legend5=gtable_filter(ggplot_gtable(ggplot_build(trees)), "guide-box")
 grid.draw(legend5)
 
 
-grid.arrange(arrangeGrob(lawn+theme(legend.position="none"),
+nmds<-grid.arrange(arrangeGrob(lawn+theme(legend.position="none"),
                          flower+theme(legend.position="none"),
                          trees+theme(legend.position="none"),
                          ncol=1),legend5, 
              widths=unit.c(unit(1, "npc") - legend5$width, legend5$width),nrow=1)
+
+ggsave("C:\\Users\\mavolio2\\Dropbox\\Manuscripts\\TimeMoney\\reviews\\Final to publish\\Proof\\NMDS.jpg", plot=nmds, width=85, height=150, unit="mm", dpi=300 )
 
 
 ###rank abundnace curves
@@ -1185,7 +1195,7 @@ legend=gtable_filter(ggplot_gtable(ggplot_build(freq_trees)), "guide-box")
 grid.draw(legend)
 
 
-grid.arrange(arrangeGrob(freq_lawn+theme(legend.position="none"),
+rank<-grid.arrange(arrangeGrob(freq_lawn+theme(legend.position="none"),
                          abund_lawn+theme(legend.position="none"),
                          freq_flower+theme(legend.position="none"),
                          abund_flower+theme(legend.position="none"),
@@ -1193,4 +1203,6 @@ grid.arrange(arrangeGrob(freq_lawn+theme(legend.position="none"),
                          abund_tree+theme(legend.position="none"),
                          ncol=2),legend, 
              widths=unit.c(unit(1, "npc") - legend$width, legend$width),nrow=1)
+
+ggsave("C:\\Users\\mavolio2\\Dropbox\\Manuscripts\\TimeMoney\\reviews\\Final to publish\\Proof\\RankFig.jpg", plot=rank, width=180, height=200, unit="mm", dpi=300 )
 
