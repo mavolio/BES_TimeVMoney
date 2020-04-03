@@ -10,15 +10,22 @@ library(codyn)
 NB<-read.csv("NB_Codes.csv")%>%
   select(Nb, Style, med_age, nb_inc, med_inc,size )%>%
   rename(money=nb_inc)
-lawn<-read.csv("Lawn Quadrats_Balt18.csv")
+lawn<-read.csv("Lawn Quadrats_Balt18_AB.csv")
 trees<-read.csv("Trees_Balt18_FB_clean.csv")
-floral<-read.csv("Floral_Data_Balt18_clean.csv")
+floral<-read.csv("Floral_Data_Balt18_clean_AB.csv")
 survey<-read.csv("2018 Homeowner_Survey Data_081219.csv")%>%
   filter(House_ID!="")
 yardarea<-read.csv("YardArea.csv")%>%
   rename(homeid=House_ID)%>%
   mutate(homeid=as.character(homeid))
 invasive<-read.csv("Invasives_Balt18_cleaned.csv")
+treetraits<-read.csv("BAL_treeTraits_AB.csv")%>%
+  select(-Alternative.names, -On.CalPoly, -Notes)
+
+
+
+# div yard with front/back ------------------------------------------------
+
 
 ##lawns
 lawn2<-lawn%>%
@@ -210,6 +217,9 @@ alldiv<-color_rich%>%
   unique()
 
 write.csv(alldiv, "All_Front_Back_Diversity.csv", row.names = F)
+
+
+# No Front Back -----------------------------------------------------------
 
 
 ###same thing but no F/B
@@ -432,6 +442,60 @@ inv_rich<-community_structure(invasive2, abundance.var="present", replicate.var=
   mutate(i.lrich=log(richness+1))%>%
   rename(i.rich=richness)
 
+#tree traits
+
+notrees_traits<-trees%>%
+  filter(Tree.species=="no trees")%>%
+  mutate(num.trees=0)%>%
+  group_by(NB, House)%>%
+  summarise(n=length(num.trees))%>%
+  filter(n==2)%>%
+  select(-n)%>%
+  mutate(shade=0,
+         flower=0,
+         native=0,
+         fruit=0,
+         fallcolor=0,
+         fruitcontrast=0,
+         litter=0)%>%
+  rename(Nb=NB)
+
+
+ttraits<-trees%>%
+  rename(genus.species=Tree.species, Nb=NB)%>%
+  filter(genus.species!="no trees")%>%
+  group_by(Nb, House, genus.species)%>%
+  summarize(abund=length(genus.species))%>%
+  left_join(treetraits)%>%
+  mutate(shade=ifelse(shading_potential==3, 1, 0),
+         flower=ifelse(flower_showy==3, 1, 0))%>%
+  mutate(numshade=abund*shade,
+         numflower=abund*flower,
+         numnative=abund*native_MD,
+         numfruit=abund*fruit_edible,
+         numfall=abund*fall_color,
+         numcontrast=abund*fruit_contrast,
+         numlitter=abund*litter)%>%
+  group_by(Nb, House)%>%
+  summarize(shading=sum(numshade, na.rm = T),
+            flowers=sum(numflower, na.rm = T),
+            natives=sum(numnative, na.rm = T),
+            fruits=sum(numfruit, na.rm = T),
+            fallc=sum(numfall, na.rm = T),
+            contrast=sum(numcontrast, na.rm = T),
+            litters=sum(litter, na.rm = T))%>%
+  left_join(stems2)%>%
+  select(-l.num.trees)%>%
+  mutate(shade=shading/num.trees,
+         flower=flowers/num.trees,
+         native=natives/num.trees,
+         fruit=fruits/num.trees,
+         fallcolor=fallc/num.trees,
+         fruitcontrast=contrast/num.trees,
+         litter=litters/num.trees)%>%
+  select(Nb, House, shade, flower, native, fruit, fallcolor, fruitcontrast, litter)%>%
+  bind_rows(notrees_traits)
+
 
 alldiv2<-lawn_analysis%>%
   full_join(tree_rich)%>%
@@ -440,7 +504,8 @@ alldiv2<-lawn_analysis%>%
   full_join(inv_rich)%>%
   full_join(flower_rich)%>%
   full_join(color_rich)%>%
-  full_join(flowernum)
+  full_join(flowernum)%>%
+  full_join(ttraits)
 
 #export invasive alone b/c only at house level
 write.csv(alldiv2, "All_Diversity_House.csv", row.names=F)
