@@ -11,7 +11,7 @@ div_all<-read.csv("All_Diversity_House.csv")
 invasive<-read.csv("Invasive_Richness.csv")
 
 test<-survey%>%
-  select(House_ID, C406)
+  select(House_ID, D2)
 
 survey2<-survey%>%
   filter(House_ID!="")%>%
@@ -39,6 +39,7 @@ survey2<-survey%>%
          water.use.orn=ifelse(C1002=="No answer"|C1002=="no answer", mean(as.numeric(C1002)),C1002),
          water.use.tree=ifelse(C1003=="No answer"|C1003=="no answer", mean(as.numeric(C1003)), ifelse(C1003=="n/a", 0, C1003)),
          water.use.food=ifelse(C1004=="No answer"|C1004=="no answer", mean(as.numeric(C1004)), ifelse(C1004=="n/a", 0, C1004)),
+         water.yard=water.use.lawn+water.use.tree+water.use.orn+water.use.food,
          #buy.ann=C401,
          ann.buy.freq=ifelse(C402=="No answer", mean(as.numeric(C402)), C402),
          #buy.per=C403,
@@ -49,8 +50,9 @@ survey2<-survey%>%
          shrub.buy.freq=ifelse(C408=="No answer", mean(as.numeric(C408)), C408),
          buy.plants=ann.buy.freq+per.buy.freq+tree.buy.freq+shrub.buy.freq,
          pay.lawn.care=ifelse(C5=="No answer", 1, C5), 
-         remove.lf=ifelse(C801=="No answer", mean(as.numeric(C801)), C801))%>%
-  select(Nb, House, imp.native, imp.var, imp.biod, imp.fl.color, imp.fl.type, imp.tr.sp, imp.orn, imp.t.shade,imp.t.fruit, imp.t.flower, imp.t.litter, imp.t.fallcolor, imp.t.contrast, time.yard, freq.weed, use.pest, use.fert, use.herb.pest, water.use.lawn, water.use.orn, water.use.tree, water.use.food, ann.buy.freq, per.buy.freq, tree.buy.freq, shrub.buy.freq, buy.plants, pay.lawn.care, remove.lf)
+         remove.lf=ifelse(C801=="No answer", mean(as.numeric(C801)), C801),
+         yrs.address=ifelse(D2=="No answer", mean(as.numeric(D2)), D2))%>%
+  select(Nb, House, imp.native, imp.var, imp.biod, imp.fl.color, imp.fl.type, imp.tr.sp, imp.orn, imp.t.shade,imp.t.fruit, imp.t.flower, imp.t.litter, imp.t.fallcolor, imp.t.contrast, time.yard, freq.weed, use.pest, use.fert, use.herb.pest, water.use.lawn, water.use.orn, water.use.tree, water.use.food, water.yard, ann.buy.freq, per.buy.freq, tree.buy.freq, shrub.buy.freq, buy.plants, pay.lawn.care, remove.lf, yrs.address)
 
 SEM_div_all<-div_all%>%
   left_join(survey2)%>%
@@ -69,4 +71,7 @@ SEM_div_all<-div_all%>%
 #   na.omit
 
 write.csv(SEM_div_all, "SEM_alldata.csv")
-  
+lawn<-SEM_div_all%>%
+  na.omit()#not all yards had lawns
+
+write.csv(lawn, "SEM_lawn_data.csv")
