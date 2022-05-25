@@ -15,6 +15,9 @@ invasive<-read.csv("Invasive_Richness.csv")
 
 
 ###Making the dataset for lawn quetions only
+####weeding is now # hours a growing season (assumed 5 months) spent weeding
+####Time is now # hours a month spent doing yard work.
+
 Lawn<-survey%>%
   select(House_ID, C101, C102, C103, C201, C410, C5, C601, C701, C801, C1001) %>% 
   mutate(fert=ifelse(C5==1, 1, C601),
