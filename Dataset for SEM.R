@@ -1,23 +1,80 @@
 library(tidyverse)
 
-setwd('C:\\Users\\megha\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
+setwd('E:\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
 setwd('C:\\Users\\mavolio2\\Dropbox\\BES Research\\Time V Money\\Data\\Cleaned Data')
 
-survey<-read.csv("2018 Homeowner_Survey Data_081219.csv")
-yardarea<-read.csv("YardArea.csv")%>%
-  select(Nb, House, HOME_VALUE)
+survey<-read.csv("2018 Homeowner_Survey Data_050620_NAs.csv")
+homevalue<-read.csv("2018HomeValuesSurvey.csv")%>%
+  separate(House_ID, into=c("Nb", "House"), sep="_")%>%
+  mutate(Nb=as.integer(Nb), House=as.integer(House))%>%
+  rename(homevalue=new_full_market_total_value) %>% 
+  select(Nb, House, homevalue)
 #div_fb<-read.csv("All_Front_Back_Diversity.csv")
 div_all<-read.csv("All_Diversity_House.csv")
 invasive<-read.csv("Invasive_Richness.csv")
 
-test<-survey%>%
-  select(House_ID, D2)
 
-survey2<-survey%>%
-  filter(House_ID!="")%>%
+###Making the dataset for lawn quetions only
+Lawn<-survey%>%
+  select(House_ID, C101, C102, C103, C201, C410, C5, C601, C701, C801, C1001) %>% 
+  mutate(fert=ifelse(C5==1, 1, C601),
+         herb=ifelse(C5==1, 1, C701),
+         rm.lv=as.numeric(ifelse(C5==1, 1, C801)),
+         watering=as.numeric(C1001),
+         weed=ifelse(C201==4, 20, ifelse(C201==3, 8, ifelse(C201==2, 5, ifelse(C201==1, 1, C201))))) %>% 
+  mutate(time=ifelse(!is.na(C103), as.numeric(C103), ifelse(C101==5, as.numeric(C102)*4, ifelse(C101<5, as.numeric(C101)*4, 999)))) %>% 
+  rename(lawncare=C5, purchase=C410) %>% 
   separate(House_ID, into=c("Nb", "House"), sep="_")%>%
   mutate(Nb=as.integer(Nb), House=as.integer(House))%>%
-  mutate(imp.native=ifelse(A4=="No answer", mean(as.numeric(A4)), A4),
+  left_join(homevalue) %>% 
+  left_join(div_all) %>%
+  select(Nb, House, time, weed, lawncare, fert, herb, homevalue, l.rich) %>% # we drop purchasing too many NAs, rm.lv and watering b/c don't think it is an important
+  filter(!is.na(l.rich)) %>% 
+  na.omit() 
+
+test<-Lawn %>% 
+  select(House_ID, C101, C102, C103, time)
+
+Lawn %>% 
+  map(~sum(is.na(.))) %>% 
+  bind_rows() %>% 
+  t()
+
+###investigating each variable what do we want to replace with?  
+ggplot(data=Lawn, aes(x=as.numeric(time))) + 
+  geom_histogram()
+
+summary(Lawn$weed)
+str(Lawn)
+
+pairs(Lawn[3:9])
+
+table(Lawn$lawncare, Lawn$fert)#can also do cor.test
+
+ggplot(data=Lawn, aes(x=fert, y=l.rich))+
+  geom_point()+
+  geom_jitter(width = .02)
+
+summary(lm(l.rich~weed, data=Lawn))
+
+
+###write the data
+write.csv(Lawn, "LawnSEM.csv", row.names=F)
+
+###not including NAs so do not need to do this
+survey2<-survey %>% 
+  mutate_all(~ifelse(.=="No Answer", median(., na.rm = T), .))
+  
+  
+
+
+
+#################old survey data methods
+
+survey2<-survey%>%
+  separate(House_ID, into=c("Nb", "House"), sep="_")%>%
+  mutate(Nb=as.integer(Nb), House=as.integer(House))%>%
+  mutate(imp.native=ifelse(A4=="No answer", mean(as.numeric(survey$A4)), A4)) ,
          imp.var=A5,
          imp.biod=ifelse(A6=="No answer", mean(as.numeric(A6)), A6),
          imp.fl.color=ifelse(A702=="No answer", mean(as.numeric(A702)), A702),
@@ -30,7 +87,7 @@ survey2<-survey%>%
          imp.t.litter=ifelse(B201=="No answer",mean(as.numeric(B201)), B201),
          imp.t.fallcolor=ifelse(B810=="No answer",mean(as.numeric(B810)), B810), #choose tree with that trait
          imp.t.contrast=ifelse(B817=="No answer",mean(as.numeric(B817)), B817),
-         time.yard=ifelse(C101.1=="No answer", mean(as.numeric(C101.1)), C101.1),
+         time.yard=ifelse(C101=="No answer", mean(as.numeric(C101.1)), C101.1),
          freq.weed=ifelse(C201=="No answer", mean(as.numeric(C201)), C201),
          use.pest=ifelse(C301=="No answer", 1, C301),
          use.herb.pest=ifelse(C701=="No answer"&C5==1, 1, ifelse(C701=="No answer"&C5==0, 1, ifelse(C701=="No answer"&C5=="No answer",1, as.numeric(C701)))),
